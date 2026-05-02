@@ -46,6 +46,25 @@ export function PublicLandingPage() {
         </SimpleGrid>
 
         <Box className="cc-surface" borderRadius="2xl" p="5">
+          <Heading size="md" mb={3}>Comptes de démonstration</Heading>
+          <Text color="fg.muted" mb={2}>Utilisez ces identifiants pour tester rapidement l'application :</Text>
+          <Stack gap={2}>
+            <Box>
+              <Text fontWeight="bold">Agriculteur</Text>
+              <Text>Identifiant: farmer.com — PIN: 1234</Text>
+            </Box>
+            <Box>
+              <Text fontWeight="bold">Coopérative</Text>
+              <Text>Identifiant: coop@example.test — PIN: 1234</Text>
+            </Box>
+            <Box>
+              <Text fontWeight="bold">Vérificateur</Text>
+              <Text>Identifiant: verifier@example.test — PIN: 1234</Text>
+            </Box>
+          </Stack>
+        </Box>
+
+        <Box className="cc-surface" borderRadius="2xl" p="5">
           <form onSubmit={submitVerify as never}>
             <Stack gap="3">
             <Heading size="md">Vérifier un lot</Heading>

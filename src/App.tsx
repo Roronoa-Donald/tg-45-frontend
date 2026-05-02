@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Outlet, Route, Routes } from 'react-router-dom'
 import { ProtectedLayout } from './routes/ProtectedLayout'
 import { RequireAuth } from './routes/RequireAuth'
 import { RequireRole } from './routes/RequireRole'
@@ -21,7 +21,7 @@ function App() {
     <Routes>
       <Route path="/" element={<PublicLandingPage />} />
       <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
+      <Route path="/register" element={<RegisterPage />} />
       <Route path="/public/verify" element={<PublicVerifyPage />} />
       <Route path="/public/verify/:lotCode" element={<PublicVerifyPage />} />
 
@@ -38,7 +38,7 @@ function App() {
           path="/farmer"
           element={
             <RequireRole role="farmer">
-              <ProtectedLayout />
+              <Outlet />
             </RequireRole>
           }
         >
@@ -53,7 +53,7 @@ function App() {
           path="/cooperative"
           element={
             <RequireRole role="cooperative">
-              <ProtectedLayout />
+              <Outlet />
             </RequireRole>
           }
         >
@@ -64,7 +64,7 @@ function App() {
           path="/verifier"
           element={
             <RequireRole role="verifier">
-              <ProtectedLayout />
+              <Outlet />
             </RequireRole>
           }
         >
@@ -75,7 +75,7 @@ function App() {
           path="/exporter"
           element={
             <RequireRole role="exporter">
-              <ProtectedLayout />
+              <Outlet />
             </RequireRole>
           }
         >

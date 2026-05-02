@@ -60,6 +60,6 @@ npm run test:run
 
 ## Notes de démonstration et livrables finaux :
 
-- Le dossier `frontend_web` contient le frontend prêt à être hébergé.
+
 - Les liens finaux du prototype, du README publié et de la vidéo de démonstration devront être ajoutés après mise en ligne.
 - Les livrables Drive doivent être regroupés dans `PHASE_2_DEMIFINAL` avant soumission.

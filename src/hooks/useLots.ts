@@ -60,6 +60,37 @@ function normalizePublicLot(record: Record<string, unknown>): PublicLotRecord {
   }
 }
 
+function buildOptimisticLot(draft: LotDraft, ownerId?: string, ownerName?: string, cooperativeId?: string | null): LotRecord {
+  return {
+    id: draft.id,
+    lotCode: draft.title,
+    ownerId: ownerId ?? '',
+    ownerName: ownerName ?? '',
+    cooperativeId: cooperativeId ?? null,
+    product: draft.product,
+    variety: draft.variety,
+    weightKg: draft.weightKg,
+    harvestDate: draft.harvestDate,
+    gpsOriginLat: draft.gpsOriginLat,
+    gpsOriginLng: draft.gpsOriginLng,
+    gpsPrecisionM: draft.gpsPrecisionM,
+    status: 'pending',
+    blockchainConfirmed: false,
+    blockchainTxHash: null,
+    blockchainProofHash: null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    events: [
+      {
+        eventType: 'register_lot',
+        occurredAt: new Date().toISOString(),
+        metadata: { offline: true },
+      },
+    ],
+    images: draft.photoDataUrl ? [{ url: draft.photoDataUrl, isPrimary: true }] : [],
+  }
+}
+
 function seedDraftsFromStorage() {
   if (typeof window === 'undefined') {
     return seedDraftLots
@@ -113,8 +144,18 @@ export function useLots() {
       const items = rawItems.length > 0
         ? rawItems.map((item) => normalizeLot(item as Record<string, unknown>))
         : seedLots
-      setLots(items)
-      return items
+      const mergedItems = [
+        ...items,
+        ...lots.filter((localLot) => {
+          if (localLot.status !== 'pending') {
+            return false
+          }
+
+          return !items.some((remoteLot) => remoteLot.id === localLot.id || remoteLot.lotCode === localLot.lotCode)
+        }),
+      ]
+      setLots(mergedItems)
+      return mergedItems
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : 'Impossible de charger les lots.')
       setLots(seedLots)
@@ -193,6 +234,12 @@ export function useLots() {
   const submitDraft = useCallback(
     async (draft: LotDraft) => {
       console.log('[useLots] submitDraft called', { draftId: draft.id, title: draft.title })
+
+      const optimisticLot = buildOptimisticLot(draft, user?.id, user?.displayName, normalizeUuid(user?.cooperativeId) ?? null)
+      setLots((current) => {
+        const withoutCurrent = current.filter((lot) => lot.id !== optimisticLot.id && lot.lotCode !== optimisticLot.lotCode)
+        return [optimisticLot, ...withoutCurrent]
+      })
       
       const payload = {
         product: draft.product,
@@ -215,39 +262,9 @@ export function useLots() {
 
       if (isOnline && token) {
         await refreshLots()
-      } else {
-        const newLot = {
-          id: draft.id,
-          lotCode: draft.title,
-          ownerId: user?.id,
-          ownerName: user?.displayName,
-          cooperativeId: normalizeUuid(user?.cooperativeId) ?? null,
-          product: draft.product,
-          variety: draft.variety,
-          weightKg: draft.weightKg,
-          harvestDate: draft.harvestDate,
-          gpsOriginLat: draft.gpsOriginLat,
-          gpsOriginLng: draft.gpsOriginLng,
-          gpsPrecisionM: draft.gpsPrecisionM,
-          status: 'pending',
-          blockchainConfirmed: false,
-          blockchainTxHash: null,
-          blockchainProofHash: null,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          events: [
-            {
-              eventType: 'register_lot',
-              occurredAt: new Date().toISOString(),
-              metadata: { offline: true },
-            },
-          ],
-          images: draft.photoDataUrl ? [{ url: draft.photoDataUrl, isPrimary: true }] : [],
-        }
-
-        setLots((current) => [newLot, ...current])
-        console.log('[useLots] Lot added to local state', { lotId: newLot.id })
       }
+
+      console.log('[useLots] Lot added to local state', { lotId: optimisticLot.id })
 
       return draft
     },
