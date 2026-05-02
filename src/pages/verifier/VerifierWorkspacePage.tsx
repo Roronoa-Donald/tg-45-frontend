@@ -83,15 +83,15 @@ export function VerifierWorkspacePage() {
   return (
     <Stack gap="5" h="full">
       <Stack className="cc-surface" borderRadius="3xl" p="6" gap="2">
-        <Heading size="xl" className="cc-gold-text">Espace vérificateur</Heading>
+        <Heading size="xl" color="var(--cc-cocoa-deep)">Espace vérificateur</Heading>
         <Text color="fg.muted">Glissez les lots pour les certifier ou les rejeter.</Text>
         <StatusPill value="idle" label="Audit premium" />
       </Stack>
 
       <Flex gap="6" overflowX="auto" pb="4" css={{ '&::-webkit-scrollbar': { height: '8px' }, '&::-webkit-scrollbar-thumb': { background: 'var(--cc-gold)', borderRadius: '4px' } }}>
         {/* Column 1: A auditer */}
-        <Stack flex="1" minW="320px" bg="rgba(0,0,0,0.2)" p="4" borderRadius="2xl" border="1px solid rgba(255,255,255,0.05)" onDragOver={(e) => e.preventDefault()}>
-          <Heading size="md" mb="2" color="var(--cc-cream)">À auditer ({pendingLots.length})</Heading>
+        <Stack flex="1" minW="320px" bg="rgba(61,36,24,0.04)" p="4" borderRadius="2xl" border="1px solid var(--cc-line)" onDragOver={(e) => e.preventDefault()}>
+          <Heading size="md" mb="2" color="var(--cc-cocoa-deep)">À auditer ({pendingLots.length})</Heading>
           {pendingLots.length === 0 ? <Text color="fg.muted" fontSize="sm">Aucun lot en attente.</Text> : null}
           {pendingLots.map((lot) => (
             <Box key={lot.id} draggable onDragStart={(e) => handleDragStart(e, lot.id)} cursor="grab" _active={{ cursor: 'grabbing' }} transition="transform 0.2s" _hover={{ transform: 'scale(1.02)' }}>
@@ -105,8 +105,8 @@ export function VerifierWorkspacePage() {
         </Stack>
 
         {/* Column 2: Certifiés */}
-        <Stack flex="1" minW="320px" bg="rgba(0,0,0,0.2)" p="4" borderRadius="2xl" border="1px dashed rgba(185,139,74,0.4)" onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDrop(e, 'certified')}>
-          <Heading size="md" mb="2" color="var(--cc-gold)">Certifiés ({certifiedLots.length})</Heading>
+        <Stack flex="1" minW="320px" bg="rgba(61,36,24,0.04)" p="4" borderRadius="2xl" border="1px dashed var(--cc-gold)" onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDrop(e, 'certified')}>
+          <Heading size="md" mb="2" color="var(--cc-olive)">Certifiés ({certifiedLots.length})</Heading>
           {certifiedLots.length === 0 ? <Text color="fg.muted" fontSize="sm">Glissez un lot ici pour le certifier.</Text> : null}
           {certifiedLots.map((lot) => (
             <Box key={lot.id} transition="transform 0.2s" _hover={{ transform: 'scale(1.02)' }}>
@@ -116,8 +116,8 @@ export function VerifierWorkspacePage() {
         </Stack>
 
         {/* Column 3: Rejetés */}
-        <Stack flex="1" minW="320px" bg="rgba(0,0,0,0.2)" p="4" borderRadius="2xl" border="1px dashed rgba(200,50,50,0.4)" onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDrop(e, 'rejected')}>
-          <Heading size="md" mb="2" color="red.400">Rejetés ({rejectedLots.length})</Heading>
+        <Stack flex="1" minW="320px" bg="rgba(61,36,24,0.04)" p="4" borderRadius="2xl" border="1px dashed red" onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDrop(e, 'rejected')}>
+          <Heading size="md" mb="2" color="red.600">Rejetés ({rejectedLots.length})</Heading>
           {rejectedLots.length === 0 ? <Text color="fg.muted" fontSize="sm">Glissez un lot ici pour le rejeter.</Text> : null}
           {rejectedLots.map((lot) => (
             <Box key={lot.id} transition="transform 0.2s" _hover={{ transform: 'scale(1.02)' }}>

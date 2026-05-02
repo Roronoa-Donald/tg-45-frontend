@@ -85,20 +85,20 @@ export function CooperativeWorkspacePage() {
   return (
     <Stack gap="5">
       <Stack className="cc-surface" borderRadius="3xl" p="6" gap="2">
-        <Heading size="xl" className="cc-gold-text">Espace coopérative</Heading>
+        <Heading size="xl" color="var(--cc-cocoa-deep)">Espace coopérative</Heading>
         <Text color="fg.muted">Validez et transférez les lots par glisser-déposer.</Text>
         <StatusPill value="idle" label={user?.displayName || 'Coopérative'} />
       </Stack>
 
       <Stack className="cc-surface" borderRadius="2xl" p="4" gap="3">
-        <Heading size="md" className="cc-gold-text">Transfert rapide</Heading>
+        <Heading size="md" color="var(--cc-cocoa-deep)">Transfert rapide</Heading>
         <Input placeholder="ID du destinataire (Ex: exporter-uuid)" value={transferTarget} onChange={(event) => setTransferTarget(event.target.value)} variant="flushed" borderColor="var(--cc-gold)" _focus={{ borderColor: 'var(--cc-gold)' }} />
       </Stack>
 
       <Flex gap="6" overflowX="auto" pb="4" css={{ '&::-webkit-scrollbar': { height: '8px' }, '&::-webkit-scrollbar-thumb': { background: 'var(--cc-gold)', borderRadius: '4px' } }}>
         {/* Column 1: A valider */}
-        <Stack flex="1" minW="320px" bg="rgba(0,0,0,0.2)" p="4" borderRadius="2xl" border="1px solid rgba(255,255,255,0.05)" onDragOver={(e) => e.preventDefault()}>
-          <Heading size="md" mb="2" color="var(--cc-cream)">À valider ({registeredLots.length})</Heading>
+        <Stack flex="1" minW="320px" bg="rgba(61,36,24,0.04)" p="4" borderRadius="2xl" border="1px solid var(--cc-line)" onDragOver={(e) => e.preventDefault()}>
+          <Heading size="md" mb="2" color="var(--cc-cocoa-deep)">À valider ({registeredLots.length})</Heading>
           {registeredLots.length === 0 ? <Text color="fg.muted" fontSize="sm">Aucun lot en attente.</Text> : null}
           {registeredLots.map((lot) => (
             <Box key={lot.id} draggable onDragStart={(e) => handleDragStart(e, lot.id)} cursor="grab" _active={{ cursor: 'grabbing' }} transition="transform 0.2s" _hover={{ transform: 'scale(1.02)' }}>
@@ -109,8 +109,8 @@ export function CooperativeWorkspacePage() {
         </Stack>
 
         {/* Column 2: Validés */}
-        <Stack flex="1" minW="320px" bg="rgba(0,0,0,0.2)" p="4" borderRadius="2xl" border="1px dashed var(--cc-line)" onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDrop(e, 'validated')}>
-          <Heading size="md" mb="2" color="var(--cc-cream)">Validés ({validatedLots.length})</Heading>
+        <Stack flex="1" minW="320px" bg="rgba(61,36,24,0.04)" p="4" borderRadius="2xl" border="1px dashed var(--cc-line)" onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDrop(e, 'validated')}>
+          <Heading size="md" mb="2" color="var(--cc-cocoa-deep)">Validés ({validatedLots.length})</Heading>
           {validatedLots.length === 0 ? <Text color="fg.muted" fontSize="sm">Glissez un lot ici pour le valider.</Text> : null}
           {validatedLots.map((lot) => (
             <Box key={lot.id} transition="transform 0.2s" _hover={{ transform: 'scale(1.02)' }}>

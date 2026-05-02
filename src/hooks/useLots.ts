@@ -145,7 +145,7 @@ export function useLots() {
     setError(null)
 
     try {
-      const response = await listLots(token, { page: 1 })
+      const response = await listLots(token, { page: 1, pageSize: 100 })
       const rawItems = Array.isArray(response)
         ? response
         : Array.isArray(response.items)
