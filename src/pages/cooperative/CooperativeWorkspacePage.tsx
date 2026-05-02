@@ -17,9 +17,13 @@ export function CooperativeWorkspacePage() {
   const incomingLots = lots.filter((lot) => ['registered', 'pending', 'in_transit'].includes(String(lot.status)))
 
   const validateLot = async (lotId: string) => {
-    await enqueueMutation({ type: 'updateVerificationStatus', payload: { lotId, status: 'validated', reason: 'Conforme' } })
-    showToast('Validation demandée.', 'success')
-    await refreshLots()
+    try {
+      await enqueueMutation({ type: 'updateVerificationStatus', payload: { lotId, status: 'validated', reason: 'Conforme' } })
+      showToast('Validation envoyée.', 'success')
+      await refreshLots()
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Erreur lors de la validation.', 'error')
+    }
   }
 
   const transferLotToPartner = async (lotId: string) => {
@@ -28,9 +32,13 @@ export function CooperativeWorkspacePage() {
       return
     }
 
-    await enqueueMutation({ type: 'transferLot', payload: { lotId, newOwnerId: transferTarget.trim() } })
-    showToast('Transfert mis en file.', 'success')
-    await refreshLots()
+    try {
+      await enqueueMutation({ type: 'transferLot', payload: { lotId, newOwnerId: transferTarget.trim() } })
+      showToast('Transfert mis en file.', 'success')
+      await refreshLots()
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Erreur lors du transfert.', 'error')
+    }
   }
 
   return (
@@ -47,15 +55,19 @@ export function CooperativeWorkspacePage() {
       </Stack>
 
       <SimpleGrid columns={{ base: 1, md: 2 }} gap="4">
-        {incomingLots.map((lot) => (
-          <Stack key={lot.id} gap="3">
-            <LotCard lot={lot} detailHref={`/lots/${encodeURIComponent(lot.id)}`} />
-            <SimpleGrid columns={2} gap="2">
-              <Button colorPalette="olive" onClick={() => validateLot(lot.id)}>Valider</Button>
-              <Button variant="outline" onClick={() => transferLotToPartner(lot.id)}>Transférer</Button>
-            </SimpleGrid>
-          </Stack>
-        ))}
+        {incomingLots.length === 0 ? (
+          <Text color="fg.muted">Aucun lot entrant pour l'instant.</Text>
+        ) : (
+          incomingLots.map((lot) => (
+            <Stack key={lot.id} gap="3">
+              <LotCard lot={lot} detailHref={`/lots/${encodeURIComponent(lot.id)}`} />
+              <SimpleGrid columns={2} gap="2">
+                <Button colorPalette="olive" onClick={() => validateLot(lot.id)}>Valider</Button>
+                <Button variant="outline" onClick={() => transferLotToPartner(lot.id)}>Transférer</Button>
+              </SimpleGrid>
+            </Stack>
+          ))
+        )}
       </SimpleGrid>
     </Stack>
   )

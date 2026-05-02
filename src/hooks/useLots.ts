@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { LotDraft, LotRecord, PublicLotRecord } from '../domain/types'
-import { seedDraftLots, seedLots, seedPublicLots } from '../data/seed'
+import { seedPublicLots } from '../data/seed'
 import { getLot, listLots, publicVerify } from '../lib/api'
 import { deleteRecord, offlineStores, readAllRecords, writeRecord } from '../lib/idb'
 import { useAuth } from './useAuth'
@@ -93,25 +93,38 @@ function buildOptimisticLot(draft: LotDraft, ownerId?: string, ownerName?: strin
 
 function seedDraftsFromStorage() {
   if (typeof window === 'undefined') {
-    return seedDraftLots
+    return [] as LotDraft[]
   }
 
   const raw = window.localStorage.getItem(DRAFT_LOTS_KEY)
   if (!raw) {
-    return seedDraftLots
+    return [] as LotDraft[]
   }
 
   try {
     return JSON.parse(raw) as LotDraft[]
   } catch {
-    return seedDraftLots
+    return [] as LotDraft[]
   }
+}
+
+function mergePendingLots(remoteLots: LotRecord[], currentLots: LotRecord[]) {
+  return [
+    ...remoteLots,
+    ...currentLots.filter((localLot) => {
+      if (localLot.status !== 'pending') {
+        return false
+      }
+
+      return !remoteLots.some((remoteLot) => remoteLot.id === localLot.id || remoteLot.lotCode === localLot.lotCode)
+    }),
+  ]
 }
 
 export function useLots() {
   const { token, user } = useAuth()
   const { enqueueMutation, isOnline, queue, lastSyncedAt } = useSync()
-  const [lots, setLots] = useState<LotRecord[]>(seedLots)
+  const [lots, setLots] = useState<LotRecord[]>([])
   const [draftLots, setDraftLots] = useState<LotDraft[]>(seedDraftsFromStorage())
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -124,8 +137,8 @@ export function useLots() {
 
   const refreshLots = useCallback(async () => {
     if (!token) {
-      setLots(seedLots)
-      return seedLots
+      setLots([])
+      return []
     }
 
     setLoading(true)
@@ -143,23 +156,19 @@ export function useLots() {
 
       const items = rawItems.length > 0
         ? rawItems.map((item) => normalizeLot(item as Record<string, unknown>))
-        : seedLots
-      const mergedItems = [
-        ...items,
-        ...lots.filter((localLot) => {
-          if (localLot.status !== 'pending') {
-            return false
-          }
+        : []
 
-          return !items.some((remoteLot) => remoteLot.id === localLot.id || remoteLot.lotCode === localLot.lotCode)
-        }),
-      ]
-      setLots(mergedItems)
+      let mergedItems = items
+      setLots((current) => {
+        mergedItems = mergePendingLots(items, current)
+        return mergedItems
+      })
+
       return mergedItems
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : 'Impossible de charger les lots.')
-      setLots(seedLots)
-      return seedLots
+      setLots([])
+      return []
     } finally {
       setLoading(false)
     }
@@ -192,14 +201,14 @@ export function useLots() {
       }
 
       if (!token) {
-        return seedLots.find((lot) => lot.id === lotId || lot.lotCode === lotId) ?? null
+        return null
       }
 
       try {
         const response = await getLot(token, lotId)
         return normalizeLot(response)
       } catch {
-        return seedLots.find((lot) => lot.id === lotId || lot.lotCode === lotId) ?? null
+        return null
       }
     },
     [lots, token],

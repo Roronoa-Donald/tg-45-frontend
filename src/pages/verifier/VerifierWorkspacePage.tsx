@@ -16,16 +16,51 @@ export function VerifierWorkspacePage() {
 
   const approveLot = async () => {
     if (!selectedLot) {
+      showToast('Aucun lot sélectionné.', 'warning')
       return
     }
 
     const payloadHash = selectedLot.blockchainProofHash || `hash-${selectedLot.id.slice(0, 8)}`
 
-    await enqueueMutation({ type: 'updateVerificationStatus', payload: { lotId: selectedLot.id, status: 'validated', reason: 'Traçabilité cohérente' } })
-    await enqueueMutation({ type: 'submitVerificationProof', payload: { lotId: selectedLot.id, signature: 'verifier-signature', payloadHash } })
-    await enqueueMutation({ type: 'certifyLot', payload: { lotId: selectedLot.id, signature: 'verifier-signature' } })
-    showToast('Lot certifié en file.', 'success')
-    await refreshLots()
+    try {
+      if (String(selectedLot.status) === 'registered') {
+        await enqueueMutation({ type: 'updateVerificationStatus', payload: { lotId: selectedLot.id, status: 'validated', reason: 'Traçabilité cohérente' } })
+      } else if (String(selectedLot.status) === 'certified') {
+        showToast('Lot déjà certifié.', 'info')
+        return
+      }
+
+      await enqueueMutation({ type: 'submitVerificationProof', payload: { lotId: selectedLot.id, signature: 'verifier-signature', payloadHash } })
+      await enqueueMutation({ type: 'certifyLot', payload: { lotId: selectedLot.id, signature: 'verifier-signature' } })
+      showToast('Lot certifié en file.', 'success')
+      await refreshLots()
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Erreur lors de la certification.', 'error')
+    }
+  }
+
+  const rejectLot = async () => {
+    if (!selectedLot) {
+      showToast('Aucun lot sélectionné.', 'warning')
+      return
+    }
+
+    try {
+      await enqueueMutation({ type: 'updateVerificationStatus', payload: { lotId: selectedLot.id, status: 'rejected', reason: 'À revoir' } })
+      showToast('Lot rejeté.', 'warning')
+      await refreshLots()
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Erreur lors du rejet.', 'error')
+    }
+  }
+
+  const handleRefresh = async () => {
+    try {
+      await refreshLots()
+      showToast('Liste mise à jour.', 'info')
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Erreur lors du rafraîchissement.', 'error')
+    }
   }
 
   return (
@@ -46,8 +81,8 @@ export function VerifierWorkspacePage() {
           <LotCard lot={selectedLot} detailHref={`/lots/${encodeURIComponent(selectedLot.id)}`} />
           <SimpleGrid columns={{ base: 1, md: 3 }} gap="2">
             <Button colorPalette="olive" onClick={approveLot}>Approuver et certifier</Button>
-            <Button variant="outline" onClick={() => enqueueMutation({ type: 'updateVerificationStatus', payload: { lotId: selectedLot.id, status: 'rejected', reason: 'À revoir' } })}>Rejeter</Button>
-            <Button variant="outline" onClick={() => refreshLots()}>Rafraîchir</Button>
+            <Button variant="outline" onClick={rejectLot}>Rejeter</Button>
+            <Button variant="outline" onClick={handleRefresh}>Rafraîchir</Button>
           </SimpleGrid>
         </Stack>
       ) : (

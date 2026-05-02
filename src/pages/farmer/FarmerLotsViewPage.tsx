@@ -3,13 +3,24 @@ import { useMemo, useState } from 'react'
 import { LotCard } from '../../components/LotCard'
 import { EmptyState } from '../../components/EmptyState'
 import { useLots } from '../../hooks/useLots'
+import { useToast } from '../../context/ToastContext'
 
 export function FarmerLotsViewPage() {
-  const { lots, draftLots, searchLots } = useLots()
+  const { lots, draftLots, searchLots, refreshLots, error, loading } = useLots()
+  const { showToast } = useToast()
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('all')
 
   const results = useMemo(() => searchLots(query, status), [query, searchLots, status])
+
+  const handleRefresh = async () => {
+    try {
+      await refreshLots()
+      showToast('Liste mise à jour.', 'info')
+    } catch (refreshError) {
+      showToast(refreshError instanceof Error ? refreshError.message : 'Erreur lors du rafraîchissement.', 'error')
+    }
+  }
 
   return (
     <Stack gap="5">
@@ -28,6 +39,10 @@ export function FarmerLotsViewPage() {
             </select>
             <Button colorPalette="olive" onClick={() => { window.location.href = '/farmer/new' }}>Nouveau lot</Button>
           </SimpleGrid>
+          <Stack direction={{ base: 'column', md: 'row' }} gap="3">
+            <Button variant="outline" onClick={handleRefresh} loading={loading}>Rafraîchir la liste</Button>
+            {error ? <Text color="red.500">{error}</Text> : null}
+          </Stack>
         </Stack>
       </Box>
 
