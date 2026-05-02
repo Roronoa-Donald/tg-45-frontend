@@ -29,6 +29,7 @@ export interface LotEvent {
   occurredAt?: string
   metadata?: Record<string, unknown>
   actorId?: string
+  actorName?: string
   action?: string
   createdAt?: string
   status?: string

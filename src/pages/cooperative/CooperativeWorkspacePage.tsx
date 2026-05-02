@@ -2,13 +2,12 @@ import { Box, Flex, Heading, Stack, Text } from '@chakra-ui/react'
 import { useState } from 'react'
 import { LotCard } from '../../components/LotCard'
 import { StatusPill } from '../../components/StatusPill'
-import { useAuth } from '../../hooks/useAuth'
+
 import { useLots } from '../../hooks/useLots'
 import { useSync } from '../../hooks/useSync'
 import { useToast } from '../../context/ToastContext'
 
 export function CooperativeWorkspacePage() {
-  const { user } = useAuth()
   const { lots, refreshLots, updateLotOptimistically } = useLots()
   const { enqueueMutation } = useSync()
   const { showToast } = useToast()

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CameraCapture } from '../../components/CameraCapture'
 import { useLots } from '../../hooks/useLots'
-import { useAuth } from '../../hooks/useAuth'
+
 import { useToast } from '../../context/ToastContext'
 import { MapPin, Navigation, Camera, FileText } from 'lucide-react'
 
@@ -162,7 +162,6 @@ function GpsCalibrationWidget({
 export function FarmerCapturePage() {
   const navigate = useNavigate()
   const { showToast } = useToast()
-  const { user } = useAuth()
   const { submitDraft, saveDraft } = useLots()
 
   const [step, setStep] = useState(1)
@@ -288,6 +287,7 @@ export function FarmerCapturePage() {
         photoDataUrl: photoUri,
         idempotencyKey,
         createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       }
 
       await saveDraft(draft)

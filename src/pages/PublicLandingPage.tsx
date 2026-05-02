@@ -1,4 +1,4 @@
-import { Box, Button, Container, Flex, Heading, HStack, Input, SimpleGrid, Stack, Text, Icon } from '@chakra-ui/react'
+import { Box, Button, Container, Flex, Heading, HStack, SimpleGrid, Stack, Text } from '@chakra-ui/react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Leaf, Link as LinkIcon, CheckCircle, Smartphone, Search, Shield } from 'lucide-react'

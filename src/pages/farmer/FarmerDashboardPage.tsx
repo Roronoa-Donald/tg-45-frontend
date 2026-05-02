@@ -1,4 +1,4 @@
-import { Box, Flex, Heading, SimpleGrid, Stack, Text, Icon } from '@chakra-ui/react'
+import { Box, Flex, Heading, SimpleGrid, Stack, Text } from '@chakra-ui/react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { useLots } from '../../hooks/useLots'
@@ -33,7 +33,7 @@ export function FarmerDashboardPage() {
   const registeredCount = lots.filter((lot) => String(lot.status) === 'registered').length
   const validatedCount = lots.filter((lot) => String(lot.status) === 'validated').length
   const certifiedCount = lots.filter((lot) => String(lot.status) === 'certified').length
-  const rejectedCount = lots.filter((lot) => String(lot.status) === 'rejected').length
+
 
   return (
     <Stack gap="8">

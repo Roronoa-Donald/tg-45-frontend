@@ -1,13 +1,13 @@
-import { Box, Flex, Heading, SimpleGrid, Stack, Text, Icon } from '@chakra-ui/react'
+import { Box, Flex, Heading, SimpleGrid, Stack, Text } from '@chakra-ui/react'
 import { useMemo, useState } from 'react'
 import { LotCard } from '../../components/LotCard'
-import { EmptyState } from '../../components/EmptyState'
+
 import { useLots } from '../../hooks/useLots'
 import { useToast } from '../../context/ToastContext'
 import { Search } from 'lucide-react'
 
 export function FarmerLotsViewPage() {
-  const { lots, draftLots, searchLots, refreshLots, error, loading } = useLots()
+  const { draftLots, searchLots, refreshLots, error, loading } = useLots()
   const { showToast } = useToast()
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('all')

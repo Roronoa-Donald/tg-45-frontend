@@ -1,4 +1,4 @@
-import { Box, Button, Circle, DialogBody, DialogCloseTrigger, DialogContent, DialogHeader, DialogRoot, DialogTitle, DialogTrigger, Flex, Heading, Stack, Text, Icon } from '@chakra-ui/react'
+import { Box, Circle, DialogBody, DialogCloseTrigger, DialogContent, DialogHeader, DialogRoot, DialogTitle, DialogTrigger, Flex, Heading, Stack, Text } from '@chakra-ui/react'
 import { useEffect, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
