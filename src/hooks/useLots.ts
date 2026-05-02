@@ -131,7 +131,15 @@ export function useLots() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      window.localStorage.setItem(DRAFT_LOTS_KEY, JSON.stringify(draftLots))
+      try {
+        const lightweightDrafts = draftLots.map(draft => {
+          const { photoDataUrl, ...rest } = draft
+          return rest
+        })
+        window.localStorage.setItem(DRAFT_LOTS_KEY, JSON.stringify(lightweightDrafts))
+      } catch (err) {
+        console.warn('Failed to save drafts to localStorage:', err)
+      }
     }
   }, [draftLots])
 
@@ -282,6 +290,7 @@ export function useLots() {
         cooperativeId: normalizeUuid(user?.cooperativeId),
         draftId: draft.id,
         title: draft.title,
+        photoDataUrl: draft.photoDataUrl,
       }
 
       await enqueueMutation({

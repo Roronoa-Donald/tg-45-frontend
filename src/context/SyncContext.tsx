@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
-import { enqueueSyncBatch, createLot, certifyLot, submitVerificationProof, transferLot, verifyLotStatus } from '../lib/api'
+import { enqueueSyncBatch, createLot, certifyLot, submitVerificationProof, transferLot, verifyLotStatus, uploadLotImage } from '../lib/api'
 import { deleteRecord, offlineStores, readAllRecords, writeRecord } from '../lib/idb'
 import { useAuth } from './AuthContext'
 import type { OfflineMutation, SyncMutationType } from '../domain/types'
@@ -40,8 +40,28 @@ function makeIdempotencyKey() {
 async function runMutation(token: string, mutation: OfflineMutation, overrideIdempotencyKey?: string) {
   const idempotencyKey = overrideIdempotencyKey || mutation.idempotencyKey
   switch (mutation.type) {
-    case 'registerLot':
-      return createLot(token, mutation.payload, idempotencyKey)
+    case 'registerLot': {
+      let lotResponse: Record<string, unknown> | null = null
+      try {
+        lotResponse = await createLot(token, mutation.payload, idempotencyKey)
+      } catch (err) {
+        // 409 means the lot was already created (idempotency replay) — treat as success
+        if (err instanceof Error && 'status' in err && (err as { status: number }).status === 409) {
+          console.info('[SyncContext] Lot already exists (409), skipping as success')
+          return null
+        }
+        throw err
+      }
+      if (mutation.payload.photoDataUrl && lotResponse?.id) {
+        try {
+          await uploadLotImage(token, String(lotResponse.id), String(mutation.payload.photoDataUrl))
+        } catch (imgError) {
+          // Image upload failure is non-fatal — lot is still created
+          console.warn('[SyncContext] Image upload failed (non-fatal):', imgError)
+        }
+      }
+      return lotResponse
+    }
     case 'transferLot':
       return transferLot(token, String(mutation.payload.lotId || mutation.payload.id), mutation.payload)
     case 'updateVerificationStatus':

@@ -20,29 +20,30 @@ interface Props {
   children: React.ReactNode
 }
 
-const toastVariants: Record<
-  ToastType,
-  {
-    icon: typeof CheckCircle2
-    classes: string
-  }
-> = {
+const toastStyles: Record<ToastType, { bg: string; border: string; color: string; icon: typeof CheckCircle2 }> = {
   success: {
+    bg: 'rgba(42, 110, 80, 0.12)',
+    border: '1px solid rgba(42, 110, 80, 0.4)',
+    color: '#1a6b47',
     icon: CheckCircle2,
-    classes:
-      'border-brandGreen-100 bg-brandGreen-50 text-brandGreen-700',
   },
   info: {
+    bg: 'rgba(59, 130, 246, 0.12)',
+    border: '1px solid rgba(59, 130, 246, 0.4)',
+    color: '#2563eb',
     icon: Info,
-    classes: 'border-infoBlue-200 bg-infoBlue-50 text-infoBlue-700',
   },
   warning: {
+    bg: 'rgba(196, 151, 58, 0.15)',
+    border: '1px solid rgba(196, 151, 58, 0.5)',
+    color: '#92700c',
     icon: AlertTriangle,
-    classes: 'border-ochre-100 bg-ochre-50 text-ochre-700',
   },
   error: {
+    bg: 'rgba(192, 57, 43, 0.12)',
+    border: '1px solid rgba(192, 57, 43, 0.4)',
+    color: '#a93226',
     icon: AlertCircle,
-    classes: 'border-errorRed-200 bg-errorRed-50 text-errorRed-700',
   },
 }
 
@@ -57,7 +58,7 @@ export const ToastProvider = ({ children }: Props) => {
       setToasts((previousToasts) =>
         previousToasts.filter((toast) => toast.id !== id),
       )
-    }, 4000)
+    }, 4500)
   }, [])
 
   const value = useMemo(
@@ -71,22 +72,49 @@ export const ToastProvider = ({ children }: Props) => {
     <ToastContext.Provider value={value}>
       {children}
 
-      <div className="pointer-events-none fixed top-4 right-4 z-[70] flex w-[calc(100%-2rem)] max-w-xs flex-col gap-2">
+      <div
+        style={{
+          position: 'fixed',
+          top: '16px',
+          right: '16px',
+          zIndex: 9999,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px',
+          maxWidth: '380px',
+          width: 'calc(100% - 32px)',
+          pointerEvents: 'none',
+        }}
+      >
         {toasts.map((toast) => {
-          const variant = toastVariants[toast.type]
+          const variant = toastStyles[toast.type]
           const Icon = variant.icon
 
           return (
             <div
               key={toast.id}
-              className={`reveal-item pointer-events-auto rounded-lg border px-3 py-2 text-sm font-medium ${variant.classes}`}
               role="status"
               aria-live="polite"
+              style={{
+                pointerEvents: 'auto',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                padding: '12px 16px',
+                borderRadius: '12px',
+                background: variant.bg,
+                border: variant.border,
+                color: variant.color,
+                fontSize: '14px',
+                fontWeight: 600,
+                fontFamily: "'Inter', sans-serif",
+                backdropFilter: 'blur(12px)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                animation: 'cc-toast-in 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+              }}
             >
-              <p className="inline-flex items-center gap-2">
-                <Icon className="h-4 w-4" />
-                {toast.message}
-              </p>
+              <Icon size={18} strokeWidth={2} style={{ flexShrink: 0 }} />
+              <span>{toast.message}</span>
             </div>
           )
         })}

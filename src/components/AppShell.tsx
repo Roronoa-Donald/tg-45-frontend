@@ -32,52 +32,66 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <Box minH="100vh">
-      <Box as="header" position="sticky" top="0" zIndex="10" className="cc-surface" borderBottomWidth="1px">
+      <Box as="header" position="sticky" top="0" zIndex="30" bg="rgba(250, 246, 240, 0.85)" backdropFilter="blur(20px)" borderBottom="1px solid var(--cc-line)">
         <Container maxW="7xl" py="3">
           <Flex align="center" justify="space-between" gap="4" wrap="wrap">
-            <HStack gap="3">
-              <Button variant="ghost" colorPalette="cocoa" onClick={() => navigate(-1)}>Retour</Button>
+            <HStack gap="4">
+              <HStack gap="1" cursor="pointer" onClick={() => navigate('/')} mr="2">
+                <Text fontSize="lg" fontWeight="800" fontFamily="'Playfair Display', serif" color="var(--cc-cocoa-deep)">Chain</Text>
+                <Text fontSize="lg" fontWeight="800" fontFamily="'Playfair Display', serif" className="cc-gold-text">Cacao</Text>
+              </HStack>
 
-              <Button variant="ghost" colorPalette="cocoa" fontWeight="extrabold" fontSize="lg" onClick={() => navigate('/')}>ChainCacao</Button>
-
-              <Button variant="ghost" onClick={() => navigate('/public/verify')}>Vérifier</Button>
-              <Button variant="ghost" onClick={() => navigate('/register')}>Inscription</Button>
-              <Button variant="ghost" onClick={() => navigate('/login')}>Connexion</Button>
+              {!user && (
+                <>
+                  <Button variant="ghost" size="sm" onClick={() => navigate('/public/verify')}>Vérifier</Button>
+                  <Button variant="ghost" size="sm" onClick={() => navigate('/register')}>Inscription</Button>
+                  <Button variant="ghost" size="sm" onClick={() => navigate('/login')}>Connexion</Button>
+                </>
+              )}
+              
               <StatusPill value={isOnline ? 'online' : 'offline'} />
-              <Text fontSize="sm" color="fg.muted">{queueLength} mutation(s) en attente</Text>
+              {queueLength > 0 && <Text fontSize="xs" fontWeight="600" color="var(--cc-gold)">{queueLength} en attente</Text>}
             </HStack>
 
-            <HStack gap="2">
-              {user ? <Box aria-hidden="true" w="8" h="8" borderRadius="full" bg="cocoa.200" /> : null}
-              {user ? <StatusPill value={user.role} label={user.role} /> : null}
-              {user ? (
-                <Button size="sm" variant="outline" onClick={logout}>Déconnexion</Button>
-              ) : (
-                <Button size="sm" colorPalette="olive" onClick={() => navigate('/login')}>Connexion</Button>
+            <HStack gap="3">
+              {user && (
+                <Flex align="center" gap="3" bg="rgba(61, 36, 24, 0.04)" px="3" py="1.5" borderRadius="full">
+                  <Box aria-hidden="true" w="6" h="6" borderRadius="full" bg="var(--cc-gold)" opacity="0.8" />
+                  <Text fontSize="sm" fontWeight="600" color="var(--cc-cocoa-deep)">{user.displayName || user.identifier}</Text>
+                  <StatusPill value={user.role} label={user.role} />
+                  <Button size="xs" variant="ghost" colorPalette="red" onClick={logout} ml="2">Quitter</Button>
+                </Flex>
               )}
             </HStack>
           </Flex>
 
-          {user ? (
-            <HStack gap="2" mt="4" overflowX="auto" pb="1">
-              {navItems.map((item) => (
-                <Button
-                  key={item.to}
-                  size="sm"
-                  variant={location.pathname === item.to || location.pathname.startsWith(`${item.to}/`) ? 'solid' : 'outline'}
-                  colorPalette="olive"
-                  onClick={() => navigate(item.to)}
-                  whiteSpace="nowrap"
-                >
-                  {item.label}
-                </Button>
-              ))}
+          {user && navItems.length > 0 && (
+            <HStack gap="2" mt="4" overflowX="auto" pb="1" css={{ '&::-webkit-scrollbar': { display: 'none' } }}>
+              {navItems.map((item) => {
+                const isActive = location.pathname === item.to || (item.to !== `/${user.role}` && location.pathname.startsWith(`${item.to}`))
+                return (
+                  <Button
+                    key={item.to}
+                    size="sm"
+                    variant={isActive ? 'solid' : 'ghost'}
+                    bg={isActive ? 'var(--cc-cocoa-deep)' : 'transparent'}
+                    color={isActive ? 'var(--cc-cream)' : 'var(--cc-cocoa)'}
+                    _hover={{ bg: isActive ? 'var(--cc-cocoa-deep)' : 'rgba(61, 36, 24, 0.06)' }}
+                    borderRadius="full"
+                    onClick={() => navigate(item.to)}
+                    whiteSpace="nowrap"
+                    px="4"
+                  >
+                    {item.label}
+                  </Button>
+                )
+              })}
             </HStack>
-          ) : null}
+          )}
         </Container>
       </Box>
 
-      <Container maxW="7xl" py={{ base: '5', md: '8' }}>
+      <Container maxW="7xl" py={{ base: '6', md: '10' }}>
         <Stack gap="4" mb="6">
           <SyncBanner />
         </Stack>

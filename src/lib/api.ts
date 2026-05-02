@@ -104,11 +104,38 @@ export async function getLot(token: string, id: string) {
 }
 
 export async function createLot(token: string, payload: Record<string, unknown>, idempotencyKey: string) {
+  // Strip photoDataUrl from register payload — it's uploaded separately via uploadLotImage
+  const { photoDataUrl: _photo, ...cleanPayload } = payload
   return request<Record<string, unknown>>('/lots/register', {
     method: 'POST',
     headers: authHeaders(token, idempotencyKey),
-    body: JSON.stringify(payload),
+    body: JSON.stringify(cleanPayload),
   })
+}
+
+function dataURLtoBlob(dataurl: string) {
+  const arr = dataurl.split(',')
+  const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg'
+  const bstr = atob(arr[1])
+  let n = bstr.length
+  const u8arr = new Uint8Array(n)
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n)
+  }
+  return new Blob([u8arr], { type: mime })
+}
+
+export async function uploadLotImage(token: string, lotId: string, photoDataUrl: string) {
+  const blob = dataURLtoBlob(photoDataUrl)
+  const formData = new FormData()
+  formData.append('file', blob, 'lot-image.jpg')
+
+  const response = await fetch(buildUrl(`/lots/${lotId}/images`), {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` }, // Do not set Content-Type so browser can set boundaries
+    body: formData,
+  })
+  return parseResponse<Record<string, unknown>>(response)
 }
 
 export async function transferLot(token: string, lotId: string, payload: Record<string, unknown>) {

@@ -1,64 +1,36 @@
-import { Box, Button, Flex, Heading, Stack, Text } from '@chakra-ui/react'
+import { Box, Flex, Heading, Stack, Text } from '@chakra-ui/react'
 import { useState } from 'react'
 import { LotCard } from '../../components/LotCard'
 import { StatusPill } from '../../components/StatusPill'
+import { useAuth } from '../../hooks/useAuth'
 import { useLots } from '../../hooks/useLots'
 import { useSync } from '../../hooks/useSync'
 import { useToast } from '../../context/ToastContext'
 
 export function VerifierWorkspacePage() {
+  const { user } = useAuth()
   const { lots, refreshLots, updateLotOptimistically } = useLots()
   const { enqueueMutation } = useSync()
   const { showToast } = useToast()
   const [loadingLotId, setLoadingLotId] = useState<string | null>(null)
 
-  const pendingLots = lots.filter((lot) => String(lot.status) === 'validated' || String(lot.status) === 'pending')
+  const pendingLots = lots.filter((lot) => String(lot.status) === 'validated')
   const certifiedLots = lots.filter((lot) => String(lot.status) === 'certified')
-  const rejectedLots = lots.filter((lot) => String(lot.status) === 'rejected')
 
-  const approveLot = async (lotId: string) => {
-    const effectiveLot = lots.find(l => l.id === lotId)
-    if (!effectiveLot) return
-
-    const payloadHash = effectiveLot.blockchainProofHash || `hash-${effectiveLot.id.slice(0, 8)}`
-
+  const certifyLot = async (lotId: string) => {
     try {
       setLoadingLotId(lotId)
-      if (String(effectiveLot.status) === 'registered') {
-        updateLotOptimistically(effectiveLot.id, { status: 'validated' })
-        await enqueueMutation({ type: 'updateVerificationStatus', payload: { lotId: effectiveLot.id, status: 'validated', reason: 'Traçabilité cohérente' } })
-      } else if (String(effectiveLot.status) === 'certified') {
-        showToast('Lot déjà certifié.', 'info')
-        return
-      } else if (String(effectiveLot.status) === 'rejected') {
-        showToast('Lot rejeté, impossible à certifier.', 'warning')
-        return
-      }
+      const effectiveLot = lots.find((lot) => lot.id === lotId)
 
-      updateLotOptimistically(effectiveLot.id, { status: 'certified' })
-      await enqueueMutation({ type: 'submitVerificationProof', payload: { lotId: effectiveLot.id, signature: 'verifier-signature', payloadHash } })
-      await enqueueMutation({ type: 'certifyLot', payload: { lotId: effectiveLot.id, signature: 'verifier-signature' } })
-      showToast('Lot certifié en file.', 'success')
+      if (!effectiveLot) return showToast('Lot introuvable.', 'warning')
+      if (String(effectiveLot.status) === 'certified') return showToast('Lot déjà certifié.', 'info')
+
+      updateLotOptimistically(lotId, { status: 'certified' })
+      await enqueueMutation({ type: 'certifyLot', payload: { lotId, certificateHash: `cert-${Date.now()}` } })
+      showToast('Lot certifié avec succès.', 'success')
       await refreshLots()
     } catch (error) {
-      showToast(error instanceof Error ? error.message : 'Erreur lors de la certification.', 'error')
-    } finally {
-      setLoadingLotId(null)
-    }
-  }
-
-  const rejectLot = async (lotId: string) => {
-    const selectedLot = lots.find(l => l.id === lotId)
-    if (!selectedLot) return
-
-    try {
-      setLoadingLotId(lotId)
-      updateLotOptimistically(selectedLot.id, { status: 'rejected' })
-      await enqueueMutation({ type: 'updateVerificationStatus', payload: { lotId: selectedLot.id, status: 'rejected', reason: 'À revoir' } })
-      showToast('Lot rejeté.', 'warning')
-      await refreshLots()
-    } catch (error) {
-      showToast(error instanceof Error ? error.message : 'Erreur lors du rejet.', 'error')
+      showToast(error instanceof Error ? error.message : 'Erreur.', 'error')
     } finally {
       setLoadingLotId(null)
     }
@@ -72,58 +44,70 @@ export function VerifierWorkspacePage() {
     e.preventDefault()
     const lotId = e.dataTransfer.getData('lotId')
     if (!lotId) return
-
-    if (targetStatus === 'certified') {
-      approveLot(lotId)
-    } else if (targetStatus === 'rejected') {
-      rejectLot(lotId)
-    }
+    if (targetStatus === 'certified') certifyLot(lotId)
   }
 
   return (
-    <Stack gap="5" h="full">
-      <Stack className="cc-surface" borderRadius="3xl" p="6" gap="2">
-        <Heading size="xl" color="var(--cc-cocoa-deep)">Espace vérificateur</Heading>
-        <Text color="fg.muted">Glissez les lots pour les certifier ou les rejeter.</Text>
-        <StatusPill value="idle" label="Audit premium" />
-      </Stack>
+    <Stack gap="8">
+      {/* ─── Header ─── */}
+      <Flex justify="space-between" align="flex-end" wrap="wrap" gap="4">
+        <Stack gap="2">
+          <Text textTransform="uppercase" letterSpacing="0.1em" fontSize="xs" fontWeight="700" color="var(--cc-cocoa)">Bureau d'audit</Text>
+          <Heading size="2xl" color="var(--cc-cocoa-deep)" fontFamily="'Playfair Display', serif">Vérificateur</Heading>
+          <Text color="var(--cc-cocoa)" opacity="0.7">Certifiez les lots validés en les glissant vers la zone de certification.</Text>
+        </Stack>
+        <StatusPill value="idle" label={`Auditeur: ${user?.displayName || 'Anonyme'}`} />
+      </Flex>
 
-      <Flex gap="6" overflowX="auto" pb="4" css={{ '&::-webkit-scrollbar': { height: '8px' }, '&::-webkit-scrollbar-thumb': { background: 'var(--cc-gold)', borderRadius: '4px' } }}>
-        {/* Column 1: A auditer */}
-        <Stack flex="1" minW="320px" bg="rgba(61,36,24,0.04)" p="4" borderRadius="2xl" border="1px solid var(--cc-line)" onDragOver={(e) => e.preventDefault()}>
-          <Heading size="md" mb="2" color="var(--cc-cocoa-deep)">À auditer ({pendingLots.length})</Heading>
-          {pendingLots.length === 0 ? <Text color="fg.muted" fontSize="sm">Aucun lot en attente.</Text> : null}
-          {pendingLots.map((lot) => (
-            <Box key={lot.id} draggable onDragStart={(e) => handleDragStart(e, lot.id)} cursor="grab" _active={{ cursor: 'grabbing' }} transition="transform 0.2s" _hover={{ transform: 'scale(1.02)' }}>
-              <LotCard lot={lot} detailHref={`/lots/${encodeURIComponent(lot.id)}`} />
-              <Flex gap="2" mt="3">
-                <Button flex="1" colorPalette="amber" onClick={() => approveLot(lot.id)} loading={loadingLotId === lot.id} disabled={loadingLotId !== null && loadingLotId !== lot.id}>Certifier</Button>
-                <Button flex="1" variant="outline" colorPalette="red" onClick={() => rejectLot(lot.id)} loading={loadingLotId === lot.id} disabled={loadingLotId !== null && loadingLotId !== lot.id}>Rejeter</Button>
-              </Flex>
-            </Box>
-          ))}
+      {/* ─── Kanban Board ─── */}
+      <Flex gap="6" overflowX="auto" pb="4" className="cc-slide-up">
+        {/* Column 1: A certifier */}
+        <Stack className="cc-kanban-col" onDragOver={(e) => e.preventDefault()}>
+          <Flex justify="space-between" align="center" mb="4">
+            <Heading size="md" color="var(--cc-cocoa-deep)" fontFamily="'Playfair Display', serif">Lots Validés</Heading>
+            <StatusPill value="validated" label={String(pendingLots.length)} />
+          </Flex>
+          
+          <Stack gap="4">
+            {pendingLots.length === 0 ? (
+              <Box p="8" textAlign="center" border="1px dashed var(--cc-line)" borderRadius="var(--cc-radius-md)">
+                <Text color="var(--cc-cocoa)" opacity="0.5">Aucun lot en attente</Text>
+              </Box>
+            ) : null}
+            
+            {pendingLots.map((lot) => (
+              <Box key={lot.id} draggable onDragStart={(e) => handleDragStart(e, lot.id)} cursor="grab" _active={{ cursor: 'grabbing' }} position="relative" transition="transform 0.2s" _hover={{ transform: 'translateY(-2px)' }}>
+                <LotCard lot={lot} detailHref={`/lots/${encodeURIComponent(lot.id)}`} />
+                <Box mt="2">
+                  <button className="cc-btn-outline" style={{ width: '100%', padding: '8px', fontSize: '13px' }} onClick={() => certifyLot(lot.id)} disabled={loadingLotId !== null}>
+                    {loadingLotId === lot.id ? 'Certification...' : '⭐ Certifier ce lot'}
+                  </button>
+                </Box>
+              </Box>
+            ))}
+          </Stack>
         </Stack>
 
         {/* Column 2: Certifiés */}
-        <Stack flex="1" minW="320px" bg="rgba(61,36,24,0.04)" p="4" borderRadius="2xl" border="1px dashed var(--cc-gold)" onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDrop(e, 'certified')}>
-          <Heading size="md" mb="2" color="var(--cc-olive)">Certifiés ({certifiedLots.length})</Heading>
-          {certifiedLots.length === 0 ? <Text color="fg.muted" fontSize="sm">Glissez un lot ici pour le certifier.</Text> : null}
-          {certifiedLots.map((lot) => (
-            <Box key={lot.id} transition="transform 0.2s" _hover={{ transform: 'scale(1.02)' }}>
-              <LotCard lot={lot} detailHref={`/lots/${encodeURIComponent(lot.id)}`} />
-            </Box>
-          ))}
-        </Stack>
+        <Stack className="cc-kanban-col cc-drop-target" onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDrop(e, 'certified')} style={{ borderColor: '#27ae60', background: 'rgba(39, 174, 96, 0.04)' }}>
+          <Flex justify="space-between" align="center" mb="4">
+            <Heading size="md" color="var(--cc-cocoa-deep)" fontFamily="'Playfair Display', serif">Certifiés (Ancrés)</Heading>
+            <StatusPill value="certified" label={String(certifiedLots.length)} />
+          </Flex>
 
-        {/* Column 3: Rejetés */}
-        <Stack flex="1" minW="320px" bg="rgba(61,36,24,0.04)" p="4" borderRadius="2xl" border="1px dashed red" onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDrop(e, 'rejected')}>
-          <Heading size="md" mb="2" color="red.600">Rejetés ({rejectedLots.length})</Heading>
-          {rejectedLots.length === 0 ? <Text color="fg.muted" fontSize="sm">Glissez un lot ici pour le rejeter.</Text> : null}
-          {rejectedLots.map((lot) => (
-            <Box key={lot.id} transition="transform 0.2s" _hover={{ transform: 'scale(1.02)' }}>
-              <LotCard lot={lot} detailHref={`/lots/${encodeURIComponent(lot.id)}`} />
-            </Box>
-          ))}
+          <Stack gap="4">
+            {certifiedLots.length === 0 ? (
+              <Box p="8" textAlign="center">
+                <Text color="var(--cc-success)" opacity="0.7">Glissez un lot ici pour le certifier définitivement</Text>
+              </Box>
+            ) : null}
+            
+            {certifiedLots.map((lot) => (
+              <Box key={lot.id} position="relative" transition="transform 0.2s" _hover={{ transform: 'translateY(-2px)' }}>
+                <LotCard lot={lot} detailHref={`/lots/${encodeURIComponent(lot.id)}`} />
+              </Box>
+            ))}
+          </Stack>
         </Stack>
       </Flex>
     </Stack>
