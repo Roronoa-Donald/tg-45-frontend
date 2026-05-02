@@ -76,7 +76,7 @@ export async function register(payload: { name: string; identifier?: string; pho
 }
 
 export async function loadFarmerProfile(token: string) {
-  return request<{ id: string; name: string; cooperativeId?: string }>('/farmers/profile', {
+  return request<{ id: string; name: string; cooperativeId?: string }>(`/farmers/profile?_t=${Date.now()}`, {
     headers: authHeaders(token),
   })
 }
@@ -89,15 +89,16 @@ export async function listLots(token: string, query: Record<string, string | num
       search.set(key, String(value))
     }
   }
+  search.set('_t', Date.now().toString())
 
-  const suffix = search.toString() ? `?${search.toString()}` : ''
+  const suffix = `?${search.toString()}`
   return request<{ items: unknown[]; meta?: Record<string, unknown> }>(`/lots${suffix}`, {
     headers: authHeaders(token),
   })
 }
 
 export async function getLot(token: string, id: string) {
-  return request<Record<string, unknown>>(`/lots/${id}`, {
+  return request<Record<string, unknown>>(`/lots/${id}?_t=${Date.now()}`, {
     headers: authHeaders(token),
   })
 }
@@ -119,7 +120,7 @@ export async function transferLot(token: string, lotId: string, payload: Record<
 }
 
 export async function loadLotEvents(token: string, lotId: string) {
-  return request<Record<string, unknown>[]>(`/lots/${lotId}/events`, {
+  return request<Record<string, unknown>[]>(`/lots/${lotId}/events?_t=${Date.now()}`, {
     headers: authHeaders(token),
   })
 }
@@ -149,7 +150,7 @@ export async function certifyLot(token: string, lotId: string, payload: Record<s
 }
 
 export async function publicVerify(lotCode: string) {
-  return request<Record<string, unknown>>(`/public/verify/${lotCode}`)
+  return request<Record<string, unknown>>(`/public/verify/${lotCode}?_t=${Date.now()}`)
 }
 
 export async function enqueueSyncBatch(token: string, actions: Array<{ actionType: string; clientRequestId: string; payload: Record<string, unknown> }>) {
@@ -161,13 +162,13 @@ export async function enqueueSyncBatch(token: string, actions: Array<{ actionTyp
 }
 
 export async function loadSyncStatus(token: string) {
-  return request<Record<string, unknown>[]>('/sync/status', {
+  return request<Record<string, unknown>[]>(`/sync/status?_t=${Date.now()}`, {
     headers: authHeaders(token),
   })
 }
 
 export async function loadCooperativeMembers(token: string, cooperativeId: string) {
-  return request<Record<string, unknown>[]>(`/cooperatives/${cooperativeId}/members`, {
+  return request<Record<string, unknown>[]>(`/cooperatives/${cooperativeId}/members?_t=${Date.now()}`, {
     headers: authHeaders(token),
   })
 }

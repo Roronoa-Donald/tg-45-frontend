@@ -9,7 +9,7 @@ import { useToast } from '../../context/ToastContext'
 
 export function CooperativeWorkspacePage() {
   const { user } = useAuth()
-  const { lots, refreshLots, loadLotFresh, updateLotOptimistically } = useLots()
+  const { lots, refreshLots, updateLotOptimistically } = useLots()
   const { enqueueMutation } = useSync()
   const { showToast } = useToast()
   const [transferTarget, setTransferTarget] = useState('')
@@ -21,8 +21,7 @@ export function CooperativeWorkspacePage() {
   const validateLot = async (lotId: string) => {
     try {
       setLoadingLotId(lotId)
-      const latestLot = await loadLotFresh(lotId)
-      const effectiveLot = latestLot ?? lots.find((lot) => lot.id === lotId)
+      const effectiveLot = lots.find((lot) => lot.id === lotId)
 
       if (!effectiveLot) {
         showToast('Lot introuvable.', 'warning')
