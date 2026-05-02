@@ -1,6 +1,6 @@
 import { apiEnvelopeSchema } from './schemas'
 
-const DEFAULT_BASE_URL = 'https://tg-45-backend-production.up.railway.app'
+const DEFAULT_BASE_URL = 'https://tg-45-backend.onrender.com'
 
 export class ApiError extends Error {
   status: number

@@ -2,6 +2,8 @@
 
 Prototype frontend complet du projet ChainCacao, construit avec React, Vite et Chakra UI. Cette interface couvre l’essentiel du MVP demandé par le jury : authentification, navigation par rôle, capture de lots, gestion locale hors ligne, consultation publique, tableau coopérative, espace vérificateur et base PWA.
 
+Le frontend pointe par défaut vers le backend Render: https://tg-45-backend.onrender.com
+
 ## Description de la solution
 
 L’application fournit une interface métier mobile-first pour les acteurs de la filière cacao. Elle permet de créer et suivre des lots, préparer des captures avec photo, conserver des brouillons locaux, synchroniser les mutations dès que la connexion revient et vérifier publiquement un lot sans compte.
@@ -56,7 +58,7 @@ npm run test:run
 - `public/` : manifeste PWA et service worker
 - `src/test/` : tests unitaires et d’intégration
 
-## Remarques pour le jury
+## Notes de démonstration et livrables finaux :
 
 - Le dossier `frontend_web` contient le frontend prêt à être hébergé.
 - Les liens finaux du prototype, du README publié et de la vidéo de démonstration devront être ajoutés après mise en ligne.
