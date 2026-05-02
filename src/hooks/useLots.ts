@@ -25,7 +25,7 @@ function normalizeLot(lot: Record<string, unknown>): LotRecord {
     id: String(lot.id ?? lot.lotCode ?? `lot-${Date.now()}`),
     lotCode: String(lot.lotCode ?? lot.code ?? lot.id ?? ''),
     ownerId: String(lot.ownerId ?? ''),
-    ownerName: String(lot.ownerName ?? lot.owner?.name ?? lot.farmerName ?? ''),
+    ownerName: String(lot.ownerName ?? (lot.owner as { name?: string })?.name ?? lot.farmerName ?? ''),
     cooperativeId: (lot.cooperativeId as string | null | undefined) ?? null,
     product: String(lot.product ?? 'Cacao'),
     variety: (lot.variety as string | null | undefined) ?? null,
