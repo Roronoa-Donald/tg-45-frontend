@@ -13,16 +13,16 @@ export function LotCard({ lot, detailHref }: { lot: LotRecord; detailHref: strin
       <Stack gap="3" p="4">
         <HStack justify="space-between" align="start">
           <Stack gap="1" flex="1" minW="0">
-            <Heading size="sm">{lot.lotCode || lot.id}</Heading>
+            <Heading size="sm" className="cc-gold-text">{lot.lotCode || lot.id}</Heading>
             <Text fontSize="sm" color="fg.muted">{lot.ownerName || 'Lot sans propriétaire'} · {lot.weightKg ?? 0} kg</Text>
           </Stack>
           <StatusPill value={String(lot.status)} />
         </HStack>
 
         <HStack gap="2" wrap="wrap">
-          <Badge colorPalette="amber" variant="subtle">{lot.product || 'Cacao'}</Badge>
-          {lot.variety ? <Badge colorPalette="olive" variant="subtle">{lot.variety}</Badge> : null}
-          {lot.blockchainConfirmed ? <Badge colorPalette="green" variant="subtle">Ancré</Badge> : <Badge colorPalette="orange" variant="subtle">En attente blockchain</Badge>}
+          <Badge colorPalette="amber" variant="surface">{lot.product || 'Cacao'}</Badge>
+          {lot.variety ? <Badge colorPalette="olive" variant="surface">{lot.variety}</Badge> : null}
+          {lot.blockchainConfirmed ? <Badge colorPalette="green" variant="surface">Ancré</Badge> : <Badge colorPalette="orange" variant="surface">En attente blockchain</Badge>}
         </HStack>
 
         <Text fontSize="sm" color="fg.muted">

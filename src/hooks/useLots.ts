@@ -301,6 +301,14 @@ export function useLots() {
     [enqueueMutation, isOnline, user, token, refreshLots],
   )
 
+  const updateLotOptimistically = useCallback((lotId: string, updates: Partial<LotRecord>) => {
+    setLots((current) =>
+      current.map((lot) =>
+        lot.id === lotId || lot.lotCode === lotId ? { ...lot, ...updates } : lot
+      )
+    )
+  }, [])
+
   const searchLots = useCallback(
     (query: string, status?: string) => {
       const normalizedQuery = query.trim().toLowerCase()
@@ -341,6 +349,7 @@ export function useLots() {
     saveDraft,
     removeDraft,
     submitDraft,
+    updateLotOptimistically,
     searchLots,
     syncSummary,
   }

@@ -1,4 +1,4 @@
-import { Button, Heading, Input, SimpleGrid, Stack, Text } from '@chakra-ui/react'
+import { Box, Button, Flex, Heading, Input, Stack, Text } from '@chakra-ui/react'
 import { useState } from 'react'
 import { LotCard } from '../../components/LotCard'
 import { StatusPill } from '../../components/StatusPill'
@@ -9,13 +9,14 @@ import { useToast } from '../../context/ToastContext'
 
 export function CooperativeWorkspacePage() {
   const { user } = useAuth()
-  const { lots, refreshLots, loadLotFresh } = useLots()
+  const { lots, refreshLots, loadLotFresh, updateLotOptimistically } = useLots()
   const { enqueueMutation } = useSync()
   const { showToast } = useToast()
   const [transferTarget, setTransferTarget] = useState('')
   const [loadingLotId, setLoadingLotId] = useState<string | null>(null)
 
-  const incomingLots = lots.filter((lot) => ['registered', 'pending', 'in_transit'].includes(String(lot.status)))
+  const registeredLots = lots.filter((lot) => String(lot.status) === 'registered')
+  const validatedLots = lots.filter((lot) => String(lot.status) === 'validated' || String(lot.status) === 'pending')
 
   const validateLot = async (lotId: string) => {
     try {
@@ -38,6 +39,7 @@ export function CooperativeWorkspacePage() {
         return
       }
 
+      updateLotOptimistically(lotId, { status: 'validated' })
       await enqueueMutation({ type: 'updateVerificationStatus', payload: { lotId, status: 'validated', reason: 'Conforme' } })
       showToast('Validation envoyée.', 'success')
       await refreshLots()
@@ -56,6 +58,7 @@ export function CooperativeWorkspacePage() {
 
     try {
       setLoadingLotId(lotId)
+      updateLotOptimistically(lotId, { ownerId: transferTarget.trim() })
       await enqueueMutation({ type: 'transferLot', payload: { lotId, newOwnerId: transferTarget.trim() } })
       showToast('Transfert mis en file.', 'success')
       await refreshLots()
@@ -66,34 +69,58 @@ export function CooperativeWorkspacePage() {
     }
   }
 
+  const handleDragStart = (e: React.DragEvent, lotId: string) => {
+    e.dataTransfer.setData('lotId', lotId)
+  }
+
+  const handleDrop = (e: React.DragEvent, targetStatus: string) => {
+    e.preventDefault()
+    const lotId = e.dataTransfer.getData('lotId')
+    if (!lotId) return
+
+    if (targetStatus === 'validated') {
+      validateLot(lotId)
+    }
+  }
+
   return (
     <Stack gap="5">
       <Stack className="cc-surface" borderRadius="3xl" p="6" gap="2">
-        <Heading size="xl">Espace coopérative</Heading>
-        <Text color="fg.muted">Validez, transférez et suivez les lots entrants avec une file de reprise robuste.</Text>
+        <Heading size="xl" className="cc-gold-text">Espace coopérative</Heading>
+        <Text color="fg.muted">Validez et transférez les lots par glisser-déposer.</Text>
         <StatusPill value="idle" label={user?.displayName || 'Coopérative'} />
       </Stack>
 
       <Stack className="cc-surface" borderRadius="2xl" p="4" gap="3">
-        <Heading size="md">Transfert rapide</Heading>
-        <Input placeholder="ID du prochain propriétaire" value={transferTarget} onChange={(event) => setTransferTarget(event.target.value)} />
+        <Heading size="md" className="cc-gold-text">Transfert rapide</Heading>
+        <Input placeholder="ID du destinataire (Ex: exporter-uuid)" value={transferTarget} onChange={(event) => setTransferTarget(event.target.value)} variant="flushed" borderColor="var(--cc-gold)" _focus={{ borderColor: 'var(--cc-gold)' }} />
       </Stack>
 
-      <SimpleGrid columns={{ base: 1, md: 2 }} gap="4">
-        {incomingLots.length === 0 ? (
-          <Text color="fg.muted">Aucun lot entrant pour l'instant.</Text>
-        ) : (
-          incomingLots.map((lot) => (
-            <Stack key={lot.id} gap="3">
+      <Flex gap="6" overflowX="auto" pb="4" css={{ '&::-webkit-scrollbar': { height: '8px' }, '&::-webkit-scrollbar-thumb': { background: 'var(--cc-gold)', borderRadius: '4px' } }}>
+        {/* Column 1: A valider */}
+        <Stack flex="1" minW="320px" bg="rgba(0,0,0,0.2)" p="4" borderRadius="2xl" border="1px solid rgba(255,255,255,0.05)" onDragOver={(e) => e.preventDefault()}>
+          <Heading size="md" mb="2" color="var(--cc-cream)">À valider ({registeredLots.length})</Heading>
+          {registeredLots.length === 0 ? <Text color="fg.muted" fontSize="sm">Aucun lot en attente.</Text> : null}
+          {registeredLots.map((lot) => (
+            <Box key={lot.id} draggable onDragStart={(e) => handleDragStart(e, lot.id)} cursor="grab" _active={{ cursor: 'grabbing' }} transition="transform 0.2s" _hover={{ transform: 'scale(1.02)' }}>
               <LotCard lot={lot} detailHref={`/lots/${encodeURIComponent(lot.id)}`} />
-              <SimpleGrid columns={2} gap="2">
-                <Button colorPalette="olive" onClick={() => validateLot(lot.id)} loading={loadingLotId === lot.id} disabled={loadingLotId !== null && loadingLotId !== lot.id}>Valider</Button>
-                <Button variant="outline" onClick={() => transferLotToPartner(lot.id)} loading={loadingLotId === lot.id} disabled={loadingLotId !== null && loadingLotId !== lot.id}>Transférer</Button>
-              </SimpleGrid>
-            </Stack>
-          ))
-        )}
-      </SimpleGrid>
+              <Button mt="3" w="full" colorPalette="amber" onClick={() => validateLot(lot.id)} loading={loadingLotId === lot.id} disabled={loadingLotId !== null && loadingLotId !== lot.id}>Valider ce lot</Button>
+            </Box>
+          ))}
+        </Stack>
+
+        {/* Column 2: Validés */}
+        <Stack flex="1" minW="320px" bg="rgba(0,0,0,0.2)" p="4" borderRadius="2xl" border="1px dashed var(--cc-line)" onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDrop(e, 'validated')}>
+          <Heading size="md" mb="2" color="var(--cc-cream)">Validés ({validatedLots.length})</Heading>
+          {validatedLots.length === 0 ? <Text color="fg.muted" fontSize="sm">Glissez un lot ici pour le valider.</Text> : null}
+          {validatedLots.map((lot) => (
+            <Box key={lot.id} transition="transform 0.2s" _hover={{ transform: 'scale(1.02)' }}>
+              <LotCard lot={lot} detailHref={`/lots/${encodeURIComponent(lot.id)}`} />
+              <Button mt="3" w="full" variant="outline" colorPalette="amber" onClick={() => transferLotToPartner(lot.id)} loading={loadingLotId === lot.id} disabled={loadingLotId !== null && loadingLotId !== lot.id}>Transférer le lot</Button>
+            </Box>
+          ))}
+        </Stack>
+      </Flex>
     </Stack>
   )
 }
