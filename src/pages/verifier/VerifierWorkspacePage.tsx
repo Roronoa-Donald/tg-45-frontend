@@ -7,7 +7,7 @@ import { useSync } from '../../hooks/useSync'
 import { useToast } from '../../context/ToastContext'
 
 export function VerifierWorkspacePage() {
-  const { lots, refreshLots, loadLotFresh, updateLotOptimistically } = useLots()
+  const { lots, refreshLots, updateLotOptimistically } = useLots()
   const { enqueueMutation } = useSync()
   const { showToast } = useToast()
   const [loadingLotId, setLoadingLotId] = useState<string | null>(null)
@@ -61,15 +61,6 @@ export function VerifierWorkspacePage() {
       showToast(error instanceof Error ? error.message : 'Erreur lors du rejet.', 'error')
     } finally {
       setLoadingLotId(null)
-    }
-  }
-
-  const handleRefresh = async () => {
-    try {
-      await refreshLots()
-      showToast('Liste mise à jour.', 'info')
-    } catch (error) {
-      showToast(error instanceof Error ? error.message : 'Erreur lors du rafraîchissement.', 'error')
     }
   }
 

@@ -1,4 +1,4 @@
-import { Box, Button, Circle, DialogBackdrop, DialogBody, DialogCloseTrigger, DialogContent, DialogHeader, DialogRoot, DialogTitle, DialogTrigger, Heading, Input, Stack, Text, VStack } from '@chakra-ui/react'
+import { Box, Button, Circle, DialogBody, DialogCloseTrigger, DialogContent, DialogHeader, DialogRoot, DialogTitle, DialogTrigger, Heading, Input, Stack, Text } from '@chakra-ui/react'
 import { useEffect, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
@@ -45,7 +45,6 @@ export function PublicVerifyPage() {
 
   const gpsLat = Number(record?.gps?.lat)
   const gpsLng = Number(record?.gps?.lng)
-  const gpsPrecision = Number(record?.gps?.precisionM)
 
   useEffect(() => {
     if (!initialCode) {
