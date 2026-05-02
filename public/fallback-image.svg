@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+  <title id="title">Image indisponible</title>
+  <desc id="desc">Illustration de secours pour la maquette ChainCacao</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#e8f5ee" />
+      <stop offset="100%" stop-color="#f5eddf" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#bg)" />
+  <g fill="none" stroke="#1b6b3a" stroke-width="6" opacity="0.25">
+    <circle cx="180" cy="160" r="90" />
+    <circle cx="1020" cy="670" r="120" />
+    <path d="M120 640C340 500 500 700 740 580C900 500 1000 560 1120 500" />
+  </g>
+  <g transform="translate(600 400)">
+    <rect x="-220" y="-130" width="440" height="260" rx="22" fill="#ffffff" stroke="#c2e3d0" stroke-width="3" />
+    <path d="M-130 28L-40 -40L32 20L102 -30L160 28" fill="none" stroke="#1b6b3a" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="-82" cy="-36" r="22" fill="#c8963e" opacity="0.9" />
+    <text x="0" y="88" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="34" font-weight="700" fill="#3e2a1f">Image indisponible</text>
+  </g>
+</svg>

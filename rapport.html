@@ -1,0 +1,534 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rapport diagnostic ADB</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --text: #e2e8f0;
+      --accent: #38bdf8;
+      --ok: #22c55e;
+      --warn: #f59e0b;
+      --bad: #ef4444;
+      --muted: #94a3b8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--text);
+      background: radial-gradient(1200px 800px at 10% -10%, #0b3f59 0%, transparent 45%),
+                  radial-gradient(1000px 700px at 90% 0%, #1f2a44 0%, transparent 40%),
+                  var(--bg);
+      font-family: "Segoe UI", "Trebuchet MS", Verdana, sans-serif;
+      line-height: 1.45;
+    }
+    .wrap {
+      width: min(1100px, 94vw);
+      margin: 28px auto 42px;
+      position: relative;
+      z-index: 2;
+    }
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      border-radius: 16px;
+      padding: 16px 18px;
+      box-shadow: 0 8px 30px rgba(2, 6, 23, 0.45);
+      margin-bottom: 14px;
+    }
+    .hero h1 {
+      margin: 0 0 6px;
+      font-size: clamp(1.35rem, 2.6vw, 2rem);
+      letter-spacing: 0.2px;
+    }
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .k {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+    .v {
+      color: var(--text);
+      font-size: 1.02rem;
+      margin: 2px 0 10px;
+      word-break: break-word;
+    }
+    .score {
+      font-size: clamp(1.8rem, 4vw, 2.7rem);
+      font-weight: 700;
+      margin: 0;
+      color: var(--accent);
+    }
+    .badge {
+      display: inline-block;
+      font-weight: 700;
+      border-radius: 999px;
+      padding: 5px 12px;
+      margin-top: 8px;
+      font-size: 0.9rem;
+    }
+    .badge.ok { background: rgba(34, 197, 94, 0.16); color: var(--ok); border: 1px solid rgba(34, 197, 94, 0.45); }
+    .badge.warn { background: rgba(245, 158, 11, 0.16); color: var(--warn); border: 1px solid rgba(245, 158, 11, 0.45); }
+    .badge.bad { background: rgba(239, 68, 68, 0.16); color: var(--bad); border: 1px solid rgba(239, 68, 68, 0.45); }
+    h2 {
+      margin: 0 0 10px;
+      font-size: 1.02rem;
+      color: var(--accent);
+      letter-spacing: 0.2px;
+    }
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: rgba(2, 6, 23, 0.55);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 10px;
+      padding: 11px 12px;
+      max-height: 320px;
+      overflow: auto;
+      color: #dbe7f4;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.84rem;
+    }
+    .small-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .counter {
+      text-align: center;
+      padding: 10px;
+      border-radius: 10px;
+      background: rgba(2, 6, 23, 0.38);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+    .counter strong {
+      display: block;
+      font-size: 1.3rem;
+      margin-bottom: 4px;
+    }
+    @media (max-width: 850px) {
+      .grid { grid-template-columns: 1fr; }
+      .small-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<main class="wrap">
+  <section class="card hero">
+    <h1>Rapport diagnostic ADB - Pixel 6</h1>
+    <p>Date de generation: 16/04/2026 15:29:35,04</p>
+  </section>
+  <section class="grid">
+    <article class="card">
+      <div class="k">Serial</div>
+      <div class="v">19131FDF6009BQ</div>
+      <div class="k">Marque</div>
+      <div class="v">google</div>
+      <div class="k">Modele</div>
+      <div class="v">Pixel 6</div>
+      <div class="k">Android</div>
+      <div class="v">16</div>
+      <div class="k">Security patch</div>
+      <div class="v">2026-04-05</div>
+      <div class="k">Verified Boot</div>
+      <div class="v">green</div>
+    </article>
+    <article class="card">
+      <div class="k">Score de confiance</div>
+      <p class="score">100/100</p>
+      <span class="badge ok">Fiable</span>
+      <div class="small-grid" style="margin-top:14px;">
+        <div class="counter"><strong>0</strong>Alertes</div>
+        <div class="counter"><strong>0</strong>Erreurs</div>
+        <div class="counter"><strong>100</strong>Score</div>
+      </div>
+      <pre style="margin-top:14px;">Bareme: 90-100 = Fiable | 70-89 = Acceptable | 50-69 = A verifier | 0-49 = Faux</pre>
+    </article>
+  </section>
+  <section class="card">
+    <h2>Alertes</h2>
+    <pre>
+Aucune entree.
+    </pre>
+  </section>
+  <section class="card">
+    <h2>Erreurs</h2>
+    <pre>
+Aucune entree.
+    </pre>
+  </section>
+  <section class="card">
+    <h2>Infos systeme</h2>
+    <pre>
+serial=19131FDF6009BQ
+marque=google
+modele=Pixel 6
+android_version=16
+security_patch=2026-04-05
+fingerprint=google/oriole/oriole:16/CP1A.260405.005/15001963:user/release-keys
+    </pre>
+  </section>
+  <section class="card">
+    <h2>Etat securite</h2>
+    <pre>
+ro.boot.verifiedbootstate=green
+ro.boot.flash.locked=1
+ro.boot.vbmeta.device_state=locked
+ro.build.tags=release-keys
+    </pre>
+  </section>
+  <section class="card">
+    <h2>Batterie</h2>
+    <pre>
+Current Battery Service state:
+  AC powered: false
+  USB powered: true
+  Wireless powered: false
+  Dock powered: false
+  Max charging current: 500000
+ Time when the latest updated value of the Max charging current was sent via battery changed broadcast: +7h6m3s236ms
+  Max charging voltage: 5000000
+  Charge counter: 2550000
+  status: 2
+  health: 2
+  present: true
+  level: 62
+  scale: 100
+  voltage: 4048
+ Time when the latest updated value of the voltage was sent via battery changed broadcast: +7h7m44s988ms
+ The last voltage value sent via the battery changed broadcast: 4028
+  temperature: 320
+  technology: Li-ion
+  Charging state: 1
+  Charging policy: 1
+  Capacity level: 2
+    </pre>
+  </section>
+  <section class="card">
+    <h2>CPU</h2>
+    <pre>
+processor	: 0
+BogoMIPS	: 49.15
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x41
+CPU architecture: 8
+CPU variant	: 0x2
+CPU part	: 0xd05
+CPU revision	: 0
+processor	: 1
+BogoMIPS	: 49.15
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x41
+CPU architecture: 8
+CPU variant	: 0x2
+CPU part	: 0xd05
+CPU revision	: 0
+processor	: 2
+BogoMIPS	: 49.15
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x41
+CPU architecture: 8
+CPU variant	: 0x2
+CPU part	: 0xd05
+CPU revision	: 0
+processor	: 3
+BogoMIPS	: 49.15
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x41
+CPU architecture: 8
+CPU variant	: 0x2
+CPU part	: 0xd05
+CPU revision	: 0
+processor	: 4
+BogoMIPS	: 49.15
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x41
+CPU architecture: 8
+CPU variant	: 0x4
+CPU part	: 0xd0b
+CPU revision	: 0
+processor	: 5
+BogoMIPS	: 49.15
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x41
+CPU architecture: 8
+CPU variant	: 0x4
+CPU part	: 0xd0b
+CPU revision	: 0
+processor	: 6
+BogoMIPS	: 49.15
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x41
+CPU architecture: 8
+CPU variant	: 0x1
+CPU part	: 0xd44
+CPU revision	: 0
+processor	: 7
+BogoMIPS	: 49.15
+Features	: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm lrcpc dcpop asimddp
+CPU implementer	: 0x41
+CPU architecture: 8
+CPU variant	: 0x1
+CPU part	: 0xd44
+CPU revision	: 0
+    </pre>
+  </section>
+  <section class="card">
+    <h2>RAM</h2>
+    <pre>
+MemTotal:        7787932 kB
+MemFree:          145140 kB
+MemAvailable:    1172464 kB
+Buffers:            1236 kB
+Cached:          1378456 kB
+SwapCached:        48244 kB
+Active:          2380388 kB
+Inactive:        1979240 kB
+Active(anon):    1762184 kB
+Inactive(anon):  1525796 kB
+Active(file):     618204 kB
+Inactive(file):   453444 kB
+Unevictable:      214640 kB
+Mlocked:          212104 kB
+SwapTotal:       3145724 kB
+SwapFree:          10416 kB
+Dirty:                44 kB
+Writeback:             0 kB
+AnonPages:       3158676 kB
+Mapped:          1035212 kB
+Shmem:             99816 kB
+KReclaimable:     190468 kB
+Slab:             616052 kB
+SReclaimable:     150232 kB
+SUnreclaim:       465820 kB
+KernelStack:      137264 kB
+ShadowCallStack:   34448 kB
+PageTables:       244148 kB
+SecPageTables:         0 kB
+NFS_Unstable:          0 kB
+Bounce:                0 kB
+WritebackTmp:          0 kB
+CommitLimit:     7039688 kB
+Committed_AS:   446823420 kB
+VmallocTotal:   259653632 kB
+VmallocUsed:      274656 kB
+VmallocChunk:          0 kB
+Percpu:            17888 kB
+AnonHugePages:         0 kB
+ShmemHugePages:        0 kB
+ShmemPmdMapped:        0 kB
+FileHugePages:         0 kB
+FilePmdMapped:         0 kB
+CmaTotal:         667648 kB
+CmaFree:               0 kB
+Gpu:              334764 kB
+Zram:             994420 kB
+ION_heap_pool:     40236 kB
+ION_heap:         438952 kB
+Misc:                  0 kB
+    </pre>
+  </section>
+  <section class="card">
+    <h2>Stockage</h2>
+    <pre>
+Filesystem        1K-blocks     Used Available Use% Mounted on
+/dev/block/dm-20    1035216  1032068         0 100% /
+tmpfs               3893964     2060   3891904   1% /dev
+tmpfs               3893964        0   3893964   0% /mnt
+/dev/block/dm-21     362560   361452         0 100% /system_ext
+/dev/block/dm-22    3929388  3917552         0 100% /product
+/dev/block/dm-23     600044   598192         0 100% /vendor
+/dev/block/dm-24      53408    53240         0 100% /vendor_dlkm
+tmpfs               3893964       28   3893936   1% /apex
+tmpfs               3893964        4   3893960   1% /bootstrap-apex
+/dev/block/loop3        788      756        16  98% /bootstrap-apex/com.android.tzdata@361157000
+/dev/block/loop0      99384    99348         0 100% /bootstrap-apex/com.android.virt@361099999
+/dev/block/loop1      12100    12056         0 100% /bootstrap-apex/com.android.runtime@1
+/dev/block/loop2      39928    39900         0 100% /bootstrap-apex/com.android.i18n@1
+tmpfs               3893964        0   3893964   0% /tmp
+/dev/block/dm-68  115621972 93481980  22008920  81% /data
+/dev/block/loop5       7948     7920         0 100% /apex/com.google.pixel.wifi.ext@1
+/dev/block/loop4     159992   159956         0 100% /apex/com.google.pixel.camera.hal@1914608774
+/dev/block/loop16       352      320        28  92% /apex/com.google.pixel.euicc.update@361099999
+/dev/block/loop14      5836     5808         0 100% /apex/com.android.devicelock@1
+/dev/block/loop19     99384    99348         0 100% /apex/com.android.virt@361099999
+/dev/block/loop17      5320     5288         0 100% /apex/com.google.android.widevine@190250226
+/dev/block/loop12     39928    39900         0 100% /apex/com.android.i18n@1
+/dev/block/loop25       364      332        28  93% /apex/com.android.hardware.biometrics.face.virtual@2
+/dev/block/loop27       232      108       120  48% /apex/com.android.apex.cts.shim@1
+/dev/block/loop29      4484     4452         0 100% /apex/com.android.compos@361099999
+/dev/block/loop34     12100    12056         0 100% /apex/com.android.runtime@1
+/dev/block/loop42       628      600        16  98% /apex/com.android.hardware.biometrics.fingerprint.virtual@1
+/dev/block/dm-67        232       24       204  11% /apex/com.android.resolv@361524040
+/dev/block/dm-41       7248     7216         0 100% /apex/com.android.media@361521100
+/dev/block/dm-29      13812    13784         0 100% /apex/com.android.ondevicepersonalization@361153320
+/dev/block/dm-40       1408     1376         4 100% /apex/com.android.rkpd@361420880
+/dev/block/dm-37      35764    35732         0 100% /apex/com.android.tethering@361524140
+/dev/block/dm-31      10064    10036         0 100% /apex/com.android.nfcservices@361524120
+/dev/block/dm-30      21372    21344         0 100% /apex/com.android.bt@361418320
+/dev/block/dm-57        512      484        20  97% /apex/com.android.telephonycore@361153320
+/dev/block/dm-66        232      104       124  46% /apex/com.android.scheduling@361153320
+/dev/block/dm-28        840      812        12  99% /apex/com.android.ipsec@361153320
+/dev/block/dm-54       3460     3428         0 100% /apex/com.android.uprobestats@361153320
+/dev/block/dm-43      21180    21152         0 100% /apex/com.android.cellbroadcast@361524280
+/dev/block/dm-49       7684     7656         0 100% /apex/com.android.conscrypt@361331440
+/dev/block/dm-48       1876     1848         0 100% /apex/com.android.profiling@361153680
+/dev/block/dm-44       7984     7956         0 100% /apex/com.android.neuralnetworks@361153320
+/dev/block/dm-36      43104    43064         0 100% /apex/com.android.art@361501120
+/dev/block/dm-42       3312     3280         0 100% /apex/com.android.os.statsd@361420820
+/dev/block/dm-56       6432     6400         0 100% /apex/com.android.extservices@361153323
+/dev/block/dm-34      22492    22460         0 100% /apex/com.android.adservices@361153320
+/dev/block/dm-46       4288     4256         0 100% /apex/com.android.appsearch@361525160
+/dev/block/dm-50        788      756        16  98% /apex/com.android.tzdata@361157000
+/dev/block/dm-64      16588    16556         0 100% /apex/com.android.healthfitness@361420700
+/dev/block/dm-60       1120     1088        12  99% /apex/com.android.sdkext@361418240
+/dev/block/dm-59      32760    32728         0 100% /apex/com.android.mediaprovider@361521100
+/dev/block/dm-53      10976    10948         0 100% /apex/com.android.adbd@361154540
+/dev/block/dm-55      29828    29792         0 100% /apex/com.android.media.swcodec@361521100
+/dev/block/dm-62        340      308        28  92% /apex/com.android.crashrecovery@361524000
+/dev/block/dm-61      10776    10748         0 100% /apex/com.android.wifi@361524080
+/dev/block/dm-65       5492     5460         0 100% /apex/com.android.configinfrastructure@361153320
+/dev/block/dm-52      28032    28004         0 100% /apex/com.android.permission@361524160
+/dev/block/dm-58       7348     7316         0 100% /apex/com.android.uwb@361524000
+/dev/fuse         115621972 93481980  22008920  81% /storage/emulated
+    </pre>
+  </section>
+  <section class="card">
+    <h2>Reseau</h2>
+    <pre>
+1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+2: dummy0: &lt;BROADCAST,NOARP,UP,LOWER_UP&gt; mtu 1500 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/ether 7a:ab:58:45:b7:40 brd ff:ff:ff:ff:ff:ff
+    inet6 fe80::78ab:58ff:fe45:b740/64 scope link 
+       valid_lft forever preferred_lft forever
+3: ifb0: &lt;BROADCAST,NOARP&gt; mtu 1500 qdisc noop state DOWN group default qlen 32
+    link/ether 76:93:a0:ad:f9:b9 brd ff:ff:ff:ff:ff:ff
+4: ifb1: &lt;BROADCAST,NOARP&gt; mtu 1500 qdisc noop state DOWN group default qlen 32
+    link/ether 72:7c:b3:63:e2:b3 brd ff:ff:ff:ff:ff:ff
+5: tunl0@NONE: &lt;NOARP&gt; mtu 1480 qdisc noop state DOWN group default qlen 1000
+    link/ipip 0.0.0.0 brd 0.0.0.0
+6: gre0@NONE: &lt;NOARP&gt; mtu 1476 qdisc noop state DOWN group default qlen 1000
+    link/gre 0.0.0.0 brd 0.0.0.0
+7: gretap0@NONE: &lt;BROADCAST,MULTICAST&gt; mtu 1462 qdisc noop state DOWN group default qlen 1000
+    link/ether 00:00:00:00:00:00 brd ff:ff:ff:ff:ff:ff
+8: erspan0@NONE: &lt;BROADCAST,MULTICAST&gt; mtu 1450 qdisc noop state DOWN group default qlen 1000
+    link/ether 00:00:00:00:00:00 brd ff:ff:ff:ff:ff:ff
+9: ip_vti0@NONE: &lt;NOARP&gt; mtu 1480 qdisc noop state DOWN group default qlen 1000
+    link/ipip 0.0.0.0 brd 0.0.0.0
+10: ip6_vti0@NONE: &lt;NOARP&gt; mtu 1364 qdisc noop state DOWN group default qlen 1000
+    link/tunnel6 :: brd ::
+11: sit0@NONE: &lt;NOARP&gt; mtu 1480 qdisc noop state DOWN group default qlen 1000
+    link/sit 0.0.0.0 brd 0.0.0.0
+12: ip6tnl0@NONE: &lt;NOARP&gt; mtu 1452 qdisc noop state DOWN group default qlen 1000
+    link/tunnel6 :: brd ::
+13: ip6gre0@NONE: &lt;NOARP&gt; mtu 1448 qdisc noop state DOWN group default qlen 1000
+    link/gre6 00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00 brd 00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00
+14: rmnet0: &lt;POINTOPOINT,MULTICAST,NOARP&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/[519] 
+15: rmnet1: &lt;POINTOPOINT,MULTICAST,NOARP&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/[519] 
+16: rmnet2: &lt;POINTOPOINT,MULTICAST,NOARP&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/[519] 
+17: rmnet3: &lt;POINTOPOINT,MULTICAST,NOARP&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/[519] 
+18: rmnet4: &lt;POINTOPOINT,MULTICAST,NOARP&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/[519] 
+19: rmnet5: &lt;POINTOPOINT,MULTICAST,NOARP&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/[519] 
+20: rmnet6: &lt;POINTOPOINT,MULTICAST,NOARP&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/[519] 
+21: rmnet7: &lt;POINTOPOINT,MULTICAST,NOARP&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/[519] 
+22: rmnet8: &lt;POINTOPOINT,MULTICAST,NOARP&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/[519] 
+23: rmnet9: &lt;POINTOPOINT,MULTICAST,NOARP&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/[519] 
+24: rmnet10: &lt;POINTOPOINT,MULTICAST,NOARP&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/[519] 
+25: rmnet11: &lt;POINTOPOINT,MULTICAST,NOARP&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/[519] 
+26: rmnet12: &lt;POINTOPOINT,MULTICAST,NOARP&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/[519] 
+27: rmnet13: &lt;POINTOPOINT,MULTICAST,NOARP&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/[519] 
+28: rmnet14: &lt;POINTOPOINT,MULTICAST,NOARP&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/[519] 
+29: rmnet15: &lt;POINTOPOINT,MULTICAST,NOARP&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/[519] 
+30: rmnet16: &lt;POINTOPOINT,MULTICAST,NOARP&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/[519] 
+31: rmnet17: &lt;POINTOPOINT,MULTICAST,NOARP&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/[519] 
+32: rmnet18: &lt;POINTOPOINT,MULTICAST,NOARP&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/[519] 
+33: rmnet19: &lt;POINTOPOINT,MULTICAST,NOARP&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/[519] 
+34: rmnet20: &lt;POINTOPOINT,MULTICAST,NOARP&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/[519] 
+35: rmnet21: &lt;POINTOPOINT,MULTICAST,NOARP&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/[519] 
+36: rmnet22: &lt;POINTOPOINT,MULTICAST,NOARP&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/[519] 
+37: rmnet23: &lt;POINTOPOINT,MULTICAST,NOARP&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/[519] 
+38: rmnet24: &lt;POINTOPOINT,MULTICAST,NOARP&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/[519] 
+39: rmnet25: &lt;POINTOPOINT,MULTICAST,NOARP&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/[519] 
+40: rmnet26: &lt;POINTOPOINT,MULTICAST,NOARP&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/[519] 
+41: rmnet27: &lt;POINTOPOINT,MULTICAST,NOARP&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/[519] 
+42: rmnet28: &lt;POINTOPOINT,MULTICAST,NOARP&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/[519] 
+43: rmnet29: &lt;POINTOPOINT,MULTICAST,NOARP&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/[519] 
+44: dummy: &lt;POINTOPOINT,MULTICAST,NOARP&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/[519] 
+46: aware_nmi0: &lt;BROADCAST,MULTICAST&gt; mtu 1500 qdisc pfifo_fast state DOWN group default qlen 1000
+    link/ether 00:90:4c:33:22:11 brd ff:ff:ff:ff:ff:ff
+47: wlan0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+    link/ether 5a:b1:72:f9:53:ab brd ff:ff:ff:ff:ff:ff
+    inet 192.168.1.117/24 brd 192.168.1.255 scope global dynamic wlan0
+       valid_lft 80792sec preferred_lft 80792sec
+    inet6 2c0f:f0f8:208:5100:e4f7:b0a9:70e5:2349/64 scope global temporary dynamic 
+       valid_lft 2641sec preferred_lft 2639sec
+    inet6 2c0f:f0f8:208:5100:58b1:72ff:fef9:53ab/64 scope global dynamic mngtmpaddr 
+       valid_lft 2641sec preferred_lft 2639sec
+    inet6 fe80::58b1:72ff:fef9:53ab/64 scope link 
+       valid_lft forever preferred_lft forever
+48: wlan1: &lt;BROADCAST,MULTICAST&gt; mtu 1500 qdisc pfifo_fast state DOWN group default qlen 1000
+    link/ether ca:0c:d2:fd:b6:bf brd ff:ff:ff:ff:ff:ff
+49: dit0: &lt;&gt; mtu 2560 qdisc noop state DOWN group default qlen 1000
+    link/[519] 
+51: tun0: &lt;POINTOPOINT,UP,LOWER_UP&gt; mtu 1280 qdisc pfifo_fast state UNKNOWN group default qlen 500
+    link/none 
+    inet 172.16.0.2/32 scope global tun0
+       valid_lft forever preferred_lft forever
+    inet6 2606:4700:110:884a:bd69:e4d8:9320:d373/128 scope global 
+       valid_lft forever preferred_lft forever
+    inet6 fe80::f21a:7ef1:8:43dd/64 scope link stable-privacy 
+       valid_lft forever preferred_lft forever
+53: radiotap0: &lt;BROADCAST,MULTICAST&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/ieee802.11/radiotap 00:00:00:00:00:00 brd ff:ff:ff:ff:ff:ff
+    </pre>
+  </section>
+</main>
+</body>
+</html>

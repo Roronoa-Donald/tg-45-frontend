@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ChainCacao - Notes de démonstration</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f7f1e8;
+      --surface: #fffdf9;
+      --text: #3d2418;
+      --muted: #6b5a4c;
+      --accent: #2f7a5d;
+      --accent-2: #b98b4a;
+      --border: rgba(61, 36, 24, 0.14);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: radial-gradient(circle at top left, rgba(185, 139, 74, 0.14), transparent 28%), var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+    }
+
+    .page {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 32px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 18px 40px rgba(61, 36, 24, 0.08);
+      margin-bottom: 18px;
+    }
+
+    h1, h2 {
+      margin: 0 0 12px;
+      font-family: Georgia, serif;
+      line-height: 1.15;
+    }
+
+    h1 { font-size: 32px; }
+    h2 { font-size: 22px; margin-top: 0; }
+
+    p { margin: 0 0 10px; }
+
+    ul { margin: 8px 0 0 18px; padding: 0; }
+
+    li { margin-bottom: 6px; }
+
+    .tag {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(47, 122, 93, 0.12);
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .note {
+      border-left: 4px solid var(--accent-2);
+      padding-left: 14px;
+      color: var(--muted);
+    }
+
+    .small {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    @media print {
+      body { background: white; }
+      .page { padding: 0; }
+      .card { box-shadow: none; page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="card">
+      <div class="tag">ChainCacao</div>
+      <h1>Notes de démonstration du prototype</h1>
+      <p class="small">Support de prise de parole pour la vidéo ou la soutenance. Ce document résume le scénario de démo et les points à montrer.</p>
+    </section>
+
+    <section class="card grid">
+      <h2>1. Message d’ouverture</h2>
+      <p>Présenter ChainCacao comme une interface métier pour tracer les lots de cacao, sécuriser les opérations et permettre une vérification publique sans compte.</p>
+      <p>Insister sur les 4 idées clés: capture terrain, offline-first, workflow par rôle, et consultation publique.</p>
+    </section>
+
+    <section class="card grid">
+      <h2>2. Démonstration rapide</h2>
+      <ul>
+        <li>Se connecter avec un rôle agriculteur, coopérative ou vérificateur.</li>
+        <li>Créer un lot avec photo, poids, date et coordonnées.</li>
+        <li>Montrer la sauvegarde locale du brouillon et la file de synchronisation.</li>
+        <li>Ouvrir la liste des lots puis le détail d’un lot.</li>
+        <li>Basculer vers la vérification publique et saisir un code lot.</li>
+      </ul>
+    </section>
+
+    <section class="card grid">
+      <h2>3. Ce qu’il faut souligner au jury</h2>
+      <ul>
+        <li>Le projet fonctionne en mode mobile-first et reste lisible hors ligne.</li>
+        <li>Les routes sont protégées selon le rôle de l’utilisateur.</li>
+        <li>Les mutations peuvent être rejouées quand la connexion revient.</li>
+        <li>Le style reste cohérent et accessible, avec de gros points d’action.</li>
+        <li>Le README doit expliquer la solution, les technologies et l’exécution locale.</li>
+      </ul>
+    </section>
+
+    <section class="card note">
+      <h2>4. Rappel de soumission</h2>
+      <p>Avant dépôt final, vérifier que le dossier Drive principal contient bien le sous-dossier <strong>PHASE_2_DEMIFINAL</strong>, les liens du prototype, du README, la vidéo de démonstration et le document de notes exporté en PDF.</p>
+    </section>
+  </main>
+</body>
+</html>
