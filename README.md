@@ -58,8 +58,4 @@ npm run test:run
 - `public/` : manifeste PWA et service worker
 - `src/test/` : tests unitaires et d’intégration
 
-## Notes de démonstration et livrables finaux :
 
-
-- Les liens finaux du prototype, du README publié et de la vidéo de démonstration devront être ajoutés après mise en ligne.
-- Les livrables Drive doivent être regroupés dans `PHASE_2_DEMIFINAL` avant soumission.
