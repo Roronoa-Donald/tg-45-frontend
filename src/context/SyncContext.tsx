@@ -145,14 +145,14 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
   }, [isOnline, queue, removeMutation, token])
 
   useEffect(() => {
-    if (isOnline && token && queue.length > 0) {
+    if (isOnline && token && queue.length > 0 && syncStatus === 'idle') {
       const timerId = window.setTimeout(() => {
         void flushQueue()
       }, 0)
 
       return () => window.clearTimeout(timerId)
     }
-  }, [flushQueue, isOnline, queue.length, token])
+  }, [flushQueue, isOnline, queue.length, token, syncStatus])
 
   const enqueueMutation = useCallback(
     async ({ type, payload, idempotencyKey }: { type: SyncMutationType; payload: Record<string, unknown>; idempotencyKey?: string }) => {

@@ -25,7 +25,7 @@ function normalizeLot(lot: Record<string, unknown>): LotRecord {
     id: String(lot.id ?? lot.lotCode ?? `lot-${Date.now()}`),
     lotCode: String(lot.lotCode ?? lot.code ?? lot.id ?? ''),
     ownerId: String(lot.ownerId ?? ''),
-    ownerName: String(lot.ownerName ?? lot.farmerName ?? ''),
+    ownerName: String(lot.ownerName ?? lot.owner?.name ?? lot.farmerName ?? ''),
     cooperativeId: (lot.cooperativeId as string | null | undefined) ?? null,
     product: String(lot.product ?? 'Cacao'),
     variety: (lot.variety as string | null | undefined) ?? null,
@@ -145,7 +145,7 @@ export function useLots() {
     setError(null)
 
     try {
-      const response = await listLots(token, { page: 1, pageSize: 50 })
+      const response = await listLots(token, { page: 1 })
       const rawItems = Array.isArray(response)
         ? response
         : Array.isArray(response.items)

@@ -9,20 +9,42 @@ import { useToast } from '../../context/ToastContext'
 
 export function CooperativeWorkspacePage() {
   const { user } = useAuth()
-  const { lots, refreshLots } = useLots()
+  const { lots, refreshLots, loadLotFresh } = useLots()
   const { enqueueMutation } = useSync()
   const { showToast } = useToast()
   const [transferTarget, setTransferTarget] = useState('')
+  const [loadingLotId, setLoadingLotId] = useState<string | null>(null)
 
   const incomingLots = lots.filter((lot) => ['registered', 'pending', 'in_transit'].includes(String(lot.status)))
 
   const validateLot = async (lotId: string) => {
     try {
+      setLoadingLotId(lotId)
+      const latestLot = await loadLotFresh(lotId)
+      const effectiveLot = latestLot ?? lots.find((lot) => lot.id === lotId)
+
+      if (!effectiveLot) {
+        showToast('Lot introuvable.', 'warning')
+        return
+      }
+
+      if (String(effectiveLot.status) === 'validated') {
+        showToast('Lot déjà validé.', 'info')
+        return
+      }
+
+      if (['certified', 'rejected'].includes(String(effectiveLot.status))) {
+        showToast('Statut incompatible pour validation.', 'warning')
+        return
+      }
+
       await enqueueMutation({ type: 'updateVerificationStatus', payload: { lotId, status: 'validated', reason: 'Conforme' } })
       showToast('Validation envoyée.', 'success')
       await refreshLots()
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Erreur lors de la validation.', 'error')
+    } finally {
+      setLoadingLotId(null)
     }
   }
 
@@ -33,11 +55,14 @@ export function CooperativeWorkspacePage() {
     }
 
     try {
+      setLoadingLotId(lotId)
       await enqueueMutation({ type: 'transferLot', payload: { lotId, newOwnerId: transferTarget.trim() } })
       showToast('Transfert mis en file.', 'success')
       await refreshLots()
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Erreur lors du transfert.', 'error')
+    } finally {
+      setLoadingLotId(null)
     }
   }
 
@@ -62,8 +87,8 @@ export function CooperativeWorkspacePage() {
             <Stack key={lot.id} gap="3">
               <LotCard lot={lot} detailHref={`/lots/${encodeURIComponent(lot.id)}`} />
               <SimpleGrid columns={2} gap="2">
-                <Button colorPalette="olive" onClick={() => validateLot(lot.id)}>Valider</Button>
-                <Button variant="outline" onClick={() => transferLotToPartner(lot.id)}>Transférer</Button>
+                <Button colorPalette="olive" onClick={() => validateLot(lot.id)} loading={loadingLotId === lot.id} disabled={loadingLotId !== null && loadingLotId !== lot.id}>Valider</Button>
+                <Button variant="outline" onClick={() => transferLotToPartner(lot.id)} loading={loadingLotId === lot.id} disabled={loadingLotId !== null && loadingLotId !== lot.id}>Transférer</Button>
               </SimpleGrid>
             </Stack>
           ))
