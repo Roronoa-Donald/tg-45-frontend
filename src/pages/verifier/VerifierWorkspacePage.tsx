@@ -7,7 +7,7 @@ import { useSync } from '../../hooks/useSync'
 import { useToast } from '../../context/ToastContext'
 
 export function VerifierWorkspacePage() {
-  const { lots, refreshLots } = useLots()
+  const { lots, refreshLots, loadLotFresh } = useLots()
   const { enqueueMutation } = useSync()
   const { showToast } = useToast()
   const [selectedLotId, setSelectedLotId] = useState('')
@@ -20,18 +20,23 @@ export function VerifierWorkspacePage() {
       return
     }
 
-    const payloadHash = selectedLot.blockchainProofHash || `hash-${selectedLot.id.slice(0, 8)}`
+    const latestLot = await loadLotFresh(selectedLot.id)
+    const effectiveLot = latestLot ?? selectedLot
+    const payloadHash = effectiveLot.blockchainProofHash || `hash-${effectiveLot.id.slice(0, 8)}`
 
     try {
-      if (String(selectedLot.status) === 'registered') {
-        await enqueueMutation({ type: 'updateVerificationStatus', payload: { lotId: selectedLot.id, status: 'validated', reason: 'Traçabilité cohérente' } })
-      } else if (String(selectedLot.status) === 'certified') {
+      if (String(effectiveLot.status) === 'registered') {
+        await enqueueMutation({ type: 'updateVerificationStatus', payload: { lotId: effectiveLot.id, status: 'validated', reason: 'Traçabilité cohérente' } })
+      } else if (String(effectiveLot.status) === 'certified') {
         showToast('Lot déjà certifié.', 'info')
+        return
+      } else if (String(effectiveLot.status) === 'rejected') {
+        showToast('Lot rejeté, impossible à certifier.', 'warning')
         return
       }
 
-      await enqueueMutation({ type: 'submitVerificationProof', payload: { lotId: selectedLot.id, signature: 'verifier-signature', payloadHash } })
-      await enqueueMutation({ type: 'certifyLot', payload: { lotId: selectedLot.id, signature: 'verifier-signature' } })
+      await enqueueMutation({ type: 'submitVerificationProof', payload: { lotId: effectiveLot.id, signature: 'verifier-signature', payloadHash } })
+      await enqueueMutation({ type: 'certifyLot', payload: { lotId: effectiveLot.id, signature: 'verifier-signature' } })
       showToast('Lot certifié en file.', 'success')
       await refreshLots()
     } catch (error) {

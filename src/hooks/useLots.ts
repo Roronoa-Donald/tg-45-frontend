@@ -214,6 +214,27 @@ export function useLots() {
     [lots, token],
   )
 
+  const loadLotFresh = useCallback(
+    async (lotId: string) => {
+      if (!token) {
+        return null
+      }
+
+      try {
+        const response = await getLot(token, lotId)
+        const normalized = normalizeLot(response)
+        setLots((current) => {
+          const withoutCurrent = current.filter((lot) => lot.id !== normalized.id && lot.lotCode !== normalized.lotCode)
+          return [normalized, ...withoutCurrent]
+        })
+        return normalized
+      } catch {
+        return null
+      }
+    },
+    [token],
+  )
+
   const loadPublicLot = useCallback(async (lotCode: string) => {
     if (!lotCode) {
       return null
@@ -315,6 +336,7 @@ export function useLots() {
     isOnline,
     refreshLots,
     loadLot,
+    loadLotFresh,
     loadPublicLot,
     saveDraft,
     removeDraft,
