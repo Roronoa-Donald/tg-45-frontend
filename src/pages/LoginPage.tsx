@@ -3,13 +3,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useToast } from '../context/ToastContext'
-import { Leaf, Factory, ShieldCheck } from 'lucide-react'
 
-const ROLE_OPTIONS = [
-  { value: 'farmer', label: 'Agriculteur', icon: Leaf },
-  { value: 'cooperative', label: 'Coopérative', icon: Factory },
-  { value: 'verifier', label: 'Vérificateur', icon: ShieldCheck },
-]
 
 const ROLE_ROUTES: Record<string, string> = {
   farmer: '/farmer',
@@ -22,7 +16,7 @@ export function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const { showToast } = useToast()
-  const [form, setForm] = useState({ identifier: '', secret: '', role: 'farmer' })
+  const [form, setForm] = useState({ identifier: '', secret: '' })
   const [submitting, setSubmitting] = useState(false)
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -33,7 +27,6 @@ export function LoginPage() {
       const user = await login({
         identifier: form.identifier,
         secret: form.secret,
-        roleHint: form.role as 'farmer' | 'cooperative' | 'verifier',
       })
 
       showToast('Session ouverte.', 'success')
@@ -73,34 +66,7 @@ export function LoginPage() {
             <Box className="cc-surface" borderRadius="var(--cc-radius-lg)" p={{ base: '6', md: '8' }}>
               <form onSubmit={handleSubmit}>
                 <Stack gap="5">
-                  {/* Role selector */}
-                  <Stack gap="2">
-                    <Text fontSize="sm" fontWeight="600" color="var(--cc-cocoa)">Votre rôle</Text>
-                    <Flex gap="3">
-                      {ROLE_OPTIONS.map((opt) => (
-                        <Box
-                          key={opt.value}
-                          flex="1"
-                          textAlign="center"
-                          py="3"
-                          px="2"
-                          borderRadius="var(--cc-radius-sm)"
-                          cursor="pointer"
-                          border="1.5px solid"
-                          borderColor={form.role === opt.value ? 'var(--cc-gold)' : 'var(--cc-line)'}
-                          bg={form.role === opt.value ? 'rgba(196,151,58,0.06)' : 'transparent'}
-                          transition="all 0.3s var(--cc-transition)"
-                          onClick={() => setForm((c) => ({ ...c, role: opt.value }))}
-                          _hover={{ borderColor: 'var(--cc-gold)' }}
-                        >
-                          <Flex justify="center" mb="2" color={form.role === opt.value ? 'var(--cc-gold)' : 'var(--cc-cocoa)'}>
-                            <opt.icon size={24} strokeWidth={1.5} />
-                          </Flex>
-                          <Text fontSize="xs" fontWeight="600" color={form.role === opt.value ? 'var(--cc-gold)' : 'var(--cc-cocoa)'}>{opt.label}</Text>
-                        </Box>
-                      ))}
-                    </Flex>
-                  </Stack>
+
 
                   <Stack gap="1">
                     <Text fontSize="sm" fontWeight="600" color="var(--cc-cocoa)">Identifiant</Text>
