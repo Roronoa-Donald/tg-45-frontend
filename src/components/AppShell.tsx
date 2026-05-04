@@ -1,16 +1,18 @@
-import { Box, Button, Container, Flex, HStack, Stack, Text } from '@chakra-ui/react'
+import { Box, Button, Container, Flex, HStack, Stack, Text, IconButton } from '@chakra-ui/react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useSync } from '../hooks/useSync'
+import { useI18n } from '../context/I18nContext'
 import { SyncBanner } from './SyncBanner'
 import { StatusPill } from './StatusPill'
+import { Volume2, VolumeX } from 'lucide-react'
 
 const NAV_BY_ROLE: Record<string, Array<{ to: string; label: string }>> = {
   farmer: [
-    { to: '/farmer', label: 'Tableau de bord' },
-    { to: '/farmer/new', label: 'Nouveau lot' },
-    { to: '/farmer/lots', label: 'Mes lots' },
-    { to: '/farmer/drafts', label: 'Brouillons' },
+    { to: '/farmer', label: 'farmer_space' },
+    { to: '/farmer/new', label: 'register_harvest' },
+    { to: '/farmer/lots', label: 'my_lots' },
+    { to: '/farmer/drafts', label: 'drafts' },
   ],
   cooperative: [
     { to: '/cooperative', label: 'Travail coop' },
@@ -25,10 +27,17 @@ const NAV_BY_ROLE: Record<string, Array<{ to: string; label: string }>> = {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth()
   const { queueLength, isOnline } = useSync()
+  const { language, setLanguage, t, speak, isSpeaking } = useI18n()
   const location = useLocation()
   const navigate = useNavigate()
 
   const navItems = user ? NAV_BY_ROLE[user.role] || [] : []
+
+  const handleReadPage = () => {
+    // Basic screen reader: grab text from the main container
+    const content = document.getElementById('main-content')?.innerText || t('welcome')
+    speak(content)
+  }
 
   return (
     <Box minH="100vh">
@@ -43,7 +52,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
               {!user && (
                 <>
-                  <Button variant="ghost" size="sm" onClick={() => navigate('/public/verify')}>Vérifier</Button>
+                  <Button variant="ghost" size="sm" onClick={() => navigate('/public/verify')}>{t('verify_lot')}</Button>
                   <Button variant="ghost" size="sm" onClick={() => navigate('/register')}>Inscription</Button>
                   <Button variant="ghost" size="sm" onClick={() => navigate('/login')}>Connexion</Button>
                 </>
@@ -54,12 +63,28 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </HStack>
 
             <HStack gap="3">
+              {/* Language Switcher */}
+              <Flex bg="rgba(0,0,0,0.05)" borderRadius="full" p="1">
+                <Button size="xs" variant={language === 'fr' ? 'solid' : 'ghost'} colorPalette={language === 'fr' ? 'gray' : undefined} borderRadius="full" onClick={() => setLanguage('fr')}>FR</Button>
+                <Button size="xs" variant={language === 'ee' ? 'solid' : 'ghost'} colorPalette={language === 'ee' ? 'gray' : undefined} borderRadius="full" onClick={() => setLanguage('ee')}>EE</Button>
+              </Flex>
+
+              {/* Speaker Button */}
+              <button 
+                onClick={handleReadPage} 
+                className="cc-btn-outline" 
+                style={{ padding: '4px 8px', borderColor: isSpeaking ? 'var(--cc-gold)' : 'var(--cc-line)', color: isSpeaking ? 'var(--cc-gold)' : 'var(--cc-cocoa)' }}
+                title={t('read_aloud')}
+              >
+                {isSpeaking ? <VolumeX size={16} /> : <Volume2 size={16} />}
+              </button>
+
               {user && (
                 <Flex align="center" gap="3" bg="rgba(61, 36, 24, 0.04)" px="3" py="1.5" borderRadius="full">
                   <Box aria-hidden="true" w="6" h="6" borderRadius="full" bg="var(--cc-gold)" opacity="0.8" />
                   <Text fontSize="sm" fontWeight="600" color="var(--cc-cocoa-deep)">{user.displayName || user.identifier}</Text>
                   <StatusPill value={user.role} label={user.role} />
-                  <Button size="xs" variant="ghost" colorPalette="red" onClick={logout} ml="2">Quitter</Button>
+                  <Button size="xs" variant="ghost" colorPalette="red" onClick={logout} ml="2">{t('logout')}</Button>
                 </Flex>
               )}
             </HStack>
@@ -82,7 +107,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     whiteSpace="nowrap"
                     px="4"
                   >
-                    {item.label}
+                    {t(item.label) || item.label}
                   </Button>
                 )
               })}
@@ -91,7 +116,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </Container>
       </Box>
 
-      <Container maxW="7xl" py={{ base: '6', md: '10' }}>
+      <Container maxW="7xl" py={{ base: '6', md: '10' }} id="main-content">
         <Stack gap="4" mb="6">
           <SyncBanner />
         </Stack>

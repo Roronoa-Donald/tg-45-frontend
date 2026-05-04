@@ -15,6 +15,8 @@ import { DraftsPage } from './pages/farmer/DraftsPage'
 import { CooperativeWorkspacePage } from './pages/cooperative/CooperativeWorkspacePage'
 import { VerifierWorkspacePage } from './pages/verifier/VerifierWorkspacePage'
 import { ExporterWorkspacePage } from './pages/exporter/ExporterWorkspacePage'
+import { AdminWorkspacePage } from './pages/admin/AdminWorkspacePage'
+import { MinistryWorkspacePage } from './pages/ministry/MinistryWorkspacePage'
 
 function App() {
   return (
@@ -80,6 +82,28 @@ function App() {
           }
         >
           <Route index element={<ExporterWorkspacePage />} />
+        </Route>
+
+        <Route
+          path="/admin"
+          element={
+            <RequireRole role="admin">
+              <Outlet />
+            </RequireRole>
+          }
+        >
+          <Route index element={<AdminWorkspacePage />} />
+        </Route>
+
+        <Route
+          path="/ministry"
+          element={
+            <RequireRole role="ministry">
+              <Outlet />
+            </RequireRole>
+          }
+        >
+          <Route index element={<MinistryWorkspacePage />} />
         </Route>
       </Route>
 

@@ -1,11 +1,25 @@
-import { Box, Flex, Heading, Stack, Text } from '@chakra-ui/react'
+import { Box, Flex, Heading, Stack, Text, Tabs, Image, Input, Button, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from '@chakra-ui/react'
 import { useState } from 'react'
 import { LotCard } from '../../components/LotCard'
 import { StatusPill } from '../../components/StatusPill'
+import { CooperativeFarmersTab } from './CooperativeFarmersTab'
+import { CooperativeExportTab } from './CooperativeExportTab'
 
 import { useLots } from '../../hooks/useLots'
 import { useSync } from '../../hooks/useSync'
 import { useToast } from '../../context/ToastContext'
+import type { Lot } from '../../types'
+
+const getGpsLocation = (): Promise<{ lat: number; lng: number }> => {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) return reject(new Error('GPS non supporté'));
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      (err) => reject(err),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  });
+};
 
 export function CooperativeWorkspacePage() {
   const { lots, refreshLots, updateLotOptimistically } = useLots()
@@ -13,9 +27,49 @@ export function CooperativeWorkspacePage() {
   const { showToast } = useToast()
   const [transferTarget, setTransferTarget] = useState('')
   const [loadingLotId, setLoadingLotId] = useState<string | null>(null)
+  const [acquiringGps, setAcquiringGps] = useState(false)
+  
+  // Transcription Modal State
+  const { isOpen, onOpen, onClose } = useDisclosure()
+  const [transcriptionLot, setTranscriptionLot] = useState<Lot | null>(null)
+  const [transcriptionWeight, setTranscriptionWeight] = useState<string>('')
 
-  const registeredLots = lots.filter((lot) => String(lot.status) === 'registered')
+  const pendingWeighingLots = lots.filter((lot) => String(lot.status) === 'registered' && lot.weightKg === 0)
+  const registeredLots = lots.filter((lot) => String(lot.status) === 'registered' && lot.weightKg > 0)
   const validatedLots = lots.filter((lot) => String(lot.status) === 'validated' || String(lot.status) === 'pending')
+  const rejectedLots = lots.filter((lot) => String(lot.status) === 'rejected')
+  const certifiedLots = lots.filter((lot) => String(lot.status) === 'certified')
+
+  const openTranscription = (lot: Lot) => {
+    setTranscriptionLot(lot)
+    setTranscriptionWeight('')
+    onOpen()
+  }
+
+  const submitTranscription = async () => {
+    if (!transcriptionLot || !transcriptionWeight) return
+    const weight = Number(transcriptionWeight)
+    if (isNaN(weight) || weight <= 0) return showToast('Poids invalide', 'error')
+
+    try {
+      setLoadingLotId(transcriptionLot.id)
+      updateLotOptimistically(transcriptionLot.id, { weightKg: weight })
+      
+      // En production, vous enverriez ceci via votre file de synchronisation (enqueueMutation)
+      await enqueueMutation({ 
+        type: 'updateLotDetails', 
+        payload: { lotId: transcriptionLot.id, updates: { weightKg: weight } } 
+      })
+      
+      showToast('Poids enregistré avec succès.', 'success')
+      await refreshLots()
+      onClose()
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Erreur.', 'error')
+    } finally {
+      setLoadingLotId(null)
+    }
+  }
 
   const validateLot = async (lotId: string) => {
     try {
@@ -26,14 +80,51 @@ export function CooperativeWorkspacePage() {
       if (String(effectiveLot.status) === 'validated') return showToast('Lot déjà validé.', 'info')
       if (['certified', 'rejected'].includes(String(effectiveLot.status))) return showToast('Statut incompatible.', 'warning')
 
+      setAcquiringGps(true)
+      const gps = await getGpsLocation().catch(() => null);
+      setAcquiringGps(false)
+
+      if (!gps) {
+        showToast('⚠️ GPS indisponible — la validation continue sans coordonnées.', 'warning')
+      }
+
       updateLotOptimistically(lotId, { status: 'validated' })
-      await enqueueMutation({ type: 'updateVerificationStatus', payload: { lotId, status: 'validated', reason: 'Conforme' } })
+      await enqueueMutation({ type: 'updateVerificationStatus', payload: { lotId, status: 'validated', reason: 'Conforme', ...(gps ? { gps } : {}) } })
       showToast('Validation effectuée.', 'success')
       await refreshLots()
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Erreur.', 'error')
     } finally {
       setLoadingLotId(null)
+      setAcquiringGps(false)
+    }
+  }
+
+  const rejectLot = async (lotId: string) => {
+    try {
+      setLoadingLotId(lotId)
+      const effectiveLot = lots.find((lot) => lot.id === lotId)
+
+      if (!effectiveLot) return showToast('Lot introuvable.', 'warning')
+      if (['certified', 'rejected'].includes(String(effectiveLot.status))) return showToast('Statut incompatible.', 'warning')
+
+      setAcquiringGps(true)
+      const gps = await getGpsLocation().catch(() => null);
+      setAcquiringGps(false)
+
+      if (!gps) {
+        showToast('⚠️ GPS indisponible — le refus continue sans coordonnées.', 'warning')
+      }
+
+      updateLotOptimistically(lotId, { status: 'rejected' })
+      await enqueueMutation({ type: 'updateVerificationStatus', payload: { lotId, status: 'rejected', reason: 'Non conforme', ...(gps ? { gps } : {}) } })
+      showToast('Lot refusé.', 'info')
+      await refreshLots()
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Erreur.', 'error')
+    } finally {
+      setLoadingLotId(null)
+      setAcquiringGps(false)
     }
   }
 
@@ -72,75 +163,229 @@ export function CooperativeWorkspacePage() {
         <Stack gap="2">
           <Text textTransform="uppercase" letterSpacing="0.1em" fontSize="xs" fontWeight="700" color="var(--cc-gold)">Espace de travail</Text>
           <Heading size="2xl" color="var(--cc-cocoa-deep)" fontFamily="'Playfair Display', serif">Coopérative</Heading>
-          <Text color="var(--cc-cocoa)" opacity="0.7">Validez les lots reçus par glisser-déposer vers la colonne de droite.</Text>
+          <Text color="var(--cc-cocoa)" opacity="0.7">Validez ou refusez les lots reçus. Glissez-déposez ou utilisez les boutons.</Text>
         </Stack>
-        <Box>
+        <Flex gap="3" align="center">
+          {acquiringGps && <span className="cc-gps-spinner">Acquisition satellite…</span>}
           <input 
             className="cc-input" 
-            placeholder="ID du destinataire (Ex: exporter-uuid)" 
+            placeholder="ID du destinataire" 
             value={transferTarget} 
             onChange={(event) => setTransferTarget(event.target.value)} 
-            style={{ width: '250px', background: 'transparent' }}
+            style={{ width: '220px', background: 'transparent' }}
           />
-        </Box>
+        </Flex>
       </Flex>
 
-      {/* ─── Kanban Board ─── */}
-      <Flex gap="6" overflowX="auto" pb="4" className="cc-slide-up">
-        {/* Column 1: A valider */}
-        <Stack className="cc-kanban-col" onDragOver={(e) => e.preventDefault()}>
-          <Flex justify="space-between" align="center" mb="4">
-            <Heading size="md" color="var(--cc-cocoa-deep)" fontFamily="'Playfair Display', serif">À valider</Heading>
-            <StatusPill value="registered" label={String(registeredLots.length)} />
-          </Flex>
-          
-          <Stack gap="4">
-            {registeredLots.length === 0 ? (
-              <Box p="8" textAlign="center" border="1px dashed var(--cc-line)" borderRadius="var(--cc-radius-md)">
-                <Text color="var(--cc-cocoa)" opacity="0.5">Aucun lot en attente</Text>
-              </Box>
-            ) : null}
-            
-            {registeredLots.map((lot) => (
-              <Box key={lot.id} draggable onDragStart={(e) => handleDragStart(e, lot.id)} cursor="grab" _active={{ cursor: 'grabbing' }} position="relative" transition="transform 0.2s" _hover={{ transform: 'translateY(-2px)' }}>
-                <LotCard lot={lot} detailHref={`/lots/${encodeURIComponent(lot.id)}`} />
-                <Box mt="2">
-                  <button className="cc-btn-outline" style={{ width: '100%', padding: '8px', fontSize: '13px' }} onClick={() => validateLot(lot.id)} disabled={loadingLotId !== null}>
-                    {loadingLotId === lot.id ? 'Validation...' : '✓ Valider ce lot'}
-                  </button>
-                </Box>
-              </Box>
-            ))}
-          </Stack>
-        </Stack>
+      <Tabs.Root defaultValue="pending-weighing" variant="enclosed">
+        <Tabs.List>
+          <Tabs.Trigger value="pending-weighing">Pesées en attente <Text as="span" ml="2" fontSize="xs" fontWeight="700" color="red.500">({pendingWeighingLots.length})</Text></Tabs.Trigger>
+          <Tabs.Trigger value="to-validate">À valider <Text as="span" ml="2" fontSize="xs" fontWeight="700" color="var(--cc-gold)">({registeredLots.length})</Text></Tabs.Trigger>
+          <Tabs.Trigger value="validated">Validés <Text as="span" ml="2" fontSize="xs" fontWeight="700" color="var(--cc-olive)">({validatedLots.length})</Text></Tabs.Trigger>
+          <Tabs.Trigger value="export">Exportation <Text as="span" ml="2" fontSize="xs" fontWeight="700" color="var(--cc-gold)">({certifiedLots.length})</Text></Tabs.Trigger>
+          <Tabs.Trigger value="farmers">Agriculteurs</Tabs.Trigger>
+          <Tabs.Trigger value="rejected">Refusés</Tabs.Trigger>
+        </Tabs.List>
 
-        {/* Column 2: Validés */}
-        <Stack className="cc-kanban-col cc-drop-target" onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDrop(e, 'validated')}>
-          <Flex justify="space-between" align="center" mb="4">
-            <Heading size="md" color="var(--cc-cocoa-deep)" fontFamily="'Playfair Display', serif">Lots Validés</Heading>
-            <StatusPill value="validated" label={String(validatedLots.length)} />
-          </Flex>
+          {/* Tab 0: Pesées */}
+          <Tabs.Content value="pending-weighing" pt="6" px="0">
+            <Flex gap="6" overflowX="auto" pb="4" className="cc-slide-up">
+              <Stack className="cc-kanban-col" flex="1" onDragOver={(e) => e.preventDefault()}>
+                <Flex justify="space-between" align="center" mb="4">
+                  <Heading size="md" color="var(--cc-cocoa-deep)" fontFamily="'Playfair Display', serif">Lots en Attente de Pesée</Heading>
+                  <StatusPill value="registered" label={String(pendingWeighingLots.length)} />
+                </Flex>
+                
+                <Stack gap="4">
+                  {pendingWeighingLots.length === 0 ? (
+                    <Box p="8" textAlign="center" border="1px dashed var(--cc-line)" borderRadius="var(--cc-radius-md)">
+                      <Text color="var(--cc-cocoa)" opacity="0.5">Aucune pesée en attente</Text>
+                    </Box>
+                  ) : null}
+                  
+                  {pendingWeighingLots.map((lot) => (
+                    <Box key={lot.id} position="relative" transition="transform 0.2s" _hover={{ transform: 'translateY(-2px)' }}>
+                      <LotCard lot={lot} detailHref={`/lots/${encodeURIComponent(lot.id)}`} />
+                      <Flex mt="2" gap="2">
+                        <button className="cc-btn-gold" style={{ flex: 1, padding: '8px', fontSize: '13px' }} onClick={() => openTranscription(lot)}>
+                          👁️ Voir et Saisir Poids
+                        </button>
+                      </Flex>
+                    </Box>
+                  ))}
+                </Stack>
+              </Stack>
+            </Flex>
+          </Tabs.Content>
 
-          <Stack gap="4">
-            {validatedLots.length === 0 ? (
-              <Box p="8" textAlign="center">
-                <Text color="var(--cc-gold)" opacity="0.7">Glissez un lot ici pour le valider</Text>
-              </Box>
-            ) : null}
-            
-            {validatedLots.map((lot) => (
-              <Box key={lot.id} position="relative" transition="transform 0.2s" _hover={{ transform: 'translateY(-2px)' }}>
-                <LotCard lot={lot} detailHref={`/lots/${encodeURIComponent(lot.id)}`} />
-                <Box mt="2">
-                  <button className="cc-btn-outline" style={{ width: '100%', padding: '8px', fontSize: '13px', borderColor: 'var(--cc-gold)', color: 'var(--cc-gold)' }} onClick={() => transferLotToPartner(lot.id)} disabled={loadingLotId !== null}>
-                    {loadingLotId === lot.id ? 'Transfert...' : '↗ Transférer au partenaire'}
-                  </button>
+          {/* Tab 1: À valider */}
+          <Tabs.Content value="to-validate" pt="6" px="0">
+            <Flex gap="6" overflowX="auto" pb="4" className="cc-slide-up">
+              <Stack className="cc-kanban-col" flex="1" onDragOver={(e) => e.preventDefault()}>
+                <Flex justify="space-between" align="center" mb="4">
+                  <Heading size="md" color="var(--cc-cocoa-deep)" fontFamily="'Playfair Display', serif">Lots Enregistrés (Pesés)</Heading>
+                  <StatusPill value="registered" label={String(registeredLots.length)} />
+                </Flex>
+                
+                <Stack gap="4">
+                  {registeredLots.length === 0 ? (
+                    <Box p="8" textAlign="center" border="1px dashed var(--cc-line)" borderRadius="var(--cc-radius-md)">
+                      <Text color="var(--cc-cocoa)" opacity="0.5">Aucun lot en attente de validation</Text>
+                    </Box>
+                  ) : null}
+                  
+                  {registeredLots.map((lot) => (
+                    <Box key={lot.id} draggable onDragStart={(e) => handleDragStart(e, lot.id)} cursor="grab" _active={{ cursor: 'grabbing' }} position="relative" transition="transform 0.2s" _hover={{ transform: 'translateY(-2px)' }}>
+                      <LotCard lot={lot} detailHref={`/lots/${encodeURIComponent(lot.id)}`} />
+                      <Flex mt="2" gap="2">
+                        <button className="cc-btn-outline" style={{ flex: 1, padding: '8px', fontSize: '13px' }} onClick={() => validateLot(lot.id)} disabled={loadingLotId !== null}>
+                          {loadingLotId === lot.id ? '...' : '✓ Valider'}
+                        </button>
+                        <button className="cc-btn-outline" style={{ flex: 1, padding: '8px', fontSize: '13px', borderColor: 'var(--cc-danger)', color: 'var(--cc-danger)' }} onClick={() => rejectLot(lot.id)} disabled={loadingLotId !== null}>
+                          {loadingLotId === lot.id ? '...' : '✗ Refuser'}
+                        </button>
+                      </Flex>
+                    </Box>
+                  ))}
+                </Stack>
+              </Stack>
+            </Flex>
+          </Tabs.Content>
+
+          {/* Tab 2: Validés */}
+          <Tabs.Content value="validated" pt="6" px="0">
+            <Flex gap="6" overflowX="auto" pb="4" className="cc-slide-up">
+              <Stack className="cc-kanban-col cc-drop-target" flex="1" onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDrop(e, 'validated')}>
+                <Flex justify="space-between" align="center" mb="4">
+                  <Heading size="md" color="var(--cc-cocoa-deep)" fontFamily="'Playfair Display', serif">Lots Validés</Heading>
+                  <StatusPill value="validated" label={String(validatedLots.length)} />
+                </Flex>
+
+                <Stack gap="4">
+                  {validatedLots.length === 0 ? (
+                    <Box p="8" textAlign="center">
+                      <Text color="var(--cc-gold)" opacity="0.7">Aucun lot validé pour le moment</Text>
+                    </Box>
+                  ) : null}
+                  
+                  {validatedLots.map((lot) => (
+                    <Box key={lot.id} position="relative" transition="transform 0.2s" _hover={{ transform: 'translateY(-2px)' }}>
+                      <LotCard lot={lot} detailHref={`/lots/${encodeURIComponent(lot.id)}`} />
+                      <Box mt="2">
+                        <button className="cc-btn-outline" style={{ width: '100%', padding: '8px', fontSize: '13px', borderColor: 'var(--cc-gold)', color: 'var(--cc-gold)' }} onClick={() => transferLotToPartner(lot.id)} disabled={loadingLotId !== null}>
+                          {loadingLotId === lot.id ? 'Transfert...' : '↗ Transférer au partenaire'}
+                        </button>
+                      </Box>
+                    </Box>
+                  ))}
+                </Stack>
+              </Stack>
+            </Flex>
+          </Tabs.Content>
+
+          {/* Tab 3: Refusés */}
+          <Tabs.Content value="rejected" pt="6" px="0">
+            <div className="cc-rejected-surface cc-slide-up">
+              <Flex justify="space-between" align="center" mb="4">
+                <Heading size="md" color="var(--cc-cocoa-deep)" fontFamily="'Playfair Display', serif">Lots Refusés</Heading>
+                <StatusPill value="rejected" label={String(rejectedLots.length)} />
+              </Flex>
+              <Stack gap="4">
+                {rejectedLots.length === 0 ? (
+                  <Box p="8" textAlign="center" border="1px dashed rgba(231, 76, 60, 0.15)" borderRadius="var(--cc-radius-md)">
+                    <Text color="var(--cc-cocoa)" opacity="0.5">Aucun lot refusé</Text>
+                  </Box>
+                ) : null}
+                {rejectedLots.map((lot) => (
+                  <Box key={lot.id} position="relative" transition="transform 0.2s" _hover={{ transform: 'translateY(-2px)' }} opacity="0.85">
+                    <LotCard lot={lot} detailHref={`/lots/${encodeURIComponent(lot.id)}`} />
+                  </Box>
+                ))}
+              </Stack>
+            </div>
+          </Tabs.Content>
+
+          {/* Tab 4: Exportation */}
+          <Tabs.Content value="export" pt="6" px="0">
+            <div className="cc-slide-up">
+              <CooperativeExportTab certifiedLots={certifiedLots} refreshLots={refreshLots} />
+            </div>
+          </Tabs.Content>
+
+          {/* Tab 5: Agriculteurs */}
+          <Tabs.Content value="farmers" pt="6" px="0">
+            <div className="cc-slide-up">
+              <Flex justify="space-between" align="center" mb="4">
+                <Heading size="md" color="var(--cc-cocoa-deep)" fontFamily="'Playfair Display', serif">Approbation des agriculteurs</Heading>
+              </Flex>
+              <CooperativeFarmersTab />
+            </div>
+          </Tabs.Content>
+      </Tabs.Root>
+
+      {/* Transcription Modal */}
+      <Modal isOpen={isOpen} onClose={onClose} size="xl">
+        <ModalOverlay backdropFilter="blur(4px)" />
+        <ModalContent>
+          <ModalHeader>Transcription du Poids</ModalHeader>
+          <ModalBody>
+            {transcriptionLot && (
+              <Stack gap={4}>
+                <Text fontWeight="bold">Lot {transcriptionLot.id} - {transcriptionLot.farmerName}</Text>
+                
+                <Flex gap={4}>
+                  <Box flex="1">
+                    <Text fontSize="sm" mb={2}>Photo du lot</Text>
+                    <Image 
+                      src={transcriptionLot.imageUrl || 'https://via.placeholder.com/300'} 
+                      borderRadius="md" 
+                      objectFit="cover" 
+                      h="200px" 
+                      w="100%" 
+                    />
+                  </Box>
+                  <Box flex="1">
+                    <Text fontSize="sm" mb={2}>Photo de la balance</Text>
+                    <Image 
+                      src={transcriptionLot.scaleImageUrl || 'https://via.placeholder.com/300?text=Pas+de+balance'} 
+                      borderRadius="md" 
+                      objectFit="cover" 
+                      h="200px" 
+                      w="100%" 
+                      border={!transcriptionLot.scaleImageUrl ? "1px dashed red" : "none"}
+                    />
+                  </Box>
+                </Flex>
+
+                <Box mt={4}>
+                  <Text mb={2} fontWeight="bold">Saisir le poids final (en kg) :</Text>
+                  <Input 
+                    type="number" 
+                    placeholder="Ex: 50.5" 
+                    size="lg"
+                    value={transcriptionWeight}
+                    onChange={(e) => setTranscriptionWeight(e.target.value)}
+                  />
+                  {!transcriptionLot.scaleImageUrl && (
+                    <Text fontSize="sm" color="red.500" mt={2}>
+                      Attention : Le paysan n'a pas fourni de photo de balance. Vous devez peser ce lot vous-même.
+                    </Text>
+                  )}
                 </Box>
-              </Box>
-            ))}
-          </Stack>
-        </Stack>
-      </Flex>
+              </Stack>
+            )}
+          </ModalBody>
+
+          <ModalFooter>
+            <Button variant="ghost" mr={3} onClick={onClose}>
+              Annuler
+            </Button>
+            <Button colorScheme="green" onClick={submitTranscription} isLoading={loadingLotId === transcriptionLot?.id}>
+              Enregistrer le Poids
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Stack>
   )
 }

@@ -7,7 +7,29 @@ import { useLots } from '../hooks/useLots'
 import { EmptyState } from '../components/EmptyState'
 import { StatusPill } from '../components/StatusPill'
 import { formatLotEventLabel } from '../utils/lot-events'
-import { Play } from 'lucide-react'
+import { Play, MapPin } from 'lucide-react'
+import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet'
+import 'leaflet/dist/leaflet.css'
+import L from 'leaflet'
+
+// Custom ChainCacao markers
+const createCustomIcon = (color: string, isLast = false) => {
+  const size = isLast ? 18 : 14
+  const pulse = isLast ? `<div style="position:absolute;inset:-8px;border-radius:50%;border:2px solid ${color};opacity:0.4;animation:cc-gps-ring 2s ease-out infinite;"></div>` : ''
+  return L.divIcon({
+    className: '',
+    html: `<div style="position:relative;display:flex;align-items:center;justify-content:center;"><div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.25);"></div>${pulse}</div>`,
+    iconSize: [size + 6, size + 6],
+    iconAnchor: [(size + 6) / 2, (size + 6) / 2],
+    popupAnchor: [0, -(size / 2 + 4)],
+  })
+}
+
+const MARKER_COLORS = {
+  origin: '#2a6e50',    // olive - plantation
+  verify: '#c4973a',    // gold - validation/certification
+  last: '#c0392b',      // red - last checkpoint
+}
 
 function AnimatedTimeline({ events }: { events: any[] }) {
   return (
@@ -60,6 +82,31 @@ export function PublicVerifyPage() {
 
     void load()
   }, [initialCode, loadPublicLot])
+
+  const mapPoints: Array<{ position: [number, number]; label: string; actor: string }> = []
+  
+  if (Number.isFinite(gpsLat) && Number.isFinite(gpsLng) && gpsLat !== 0) {
+    mapPoints.push({ position: [gpsLat, gpsLng] as [number, number], label: 'Origine (Agriculteur)', actor: 'Plantation' })
+  }
+  
+  // ─── DEMO JITTER: Spread out points slightly if they overlap (testing on same PC) ───
+  let jitterCount = 1;
+  record?.events?.forEach((e: any) => {
+    if (e.metadata?.gps?.lat && e.metadata?.gps?.lng) {
+      // Add a small ~2km artificial offset to simulate movement between actors
+      const latOffset = (jitterCount * 0.015); 
+      const lngOffset = (jitterCount * 0.025);
+      
+      mapPoints.push({
+        position: [e.metadata.gps.lat + latOffset, e.metadata.gps.lng + lngOffset],
+        label: formatLotEventLabel(e.eventType || e.action),
+        actor: e.actorName || 'Acteur inconnu'
+      })
+      jitterCount++;
+    }
+  })
+
+  const pathPositions = mapPoints.map((p) => p.position)
 
   const handleSearch = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -169,6 +216,72 @@ export function PublicVerifyPage() {
                     )) : <Text color="var(--cc-cocoa)" opacity="0.6">Aucun événement enregistré.</Text>}
                   </Box>
                 </Box>
+                {/* Map Section */}
+                {mapPoints.length > 0 && (
+                  <Box>
+                    <Flex align="center" gap="2" mb="4">
+                      <MapPin size={18} color="var(--cc-gold)" />
+                      <Heading size="lg" color="var(--cc-cocoa-deep)" fontFamily="'Playfair Display', serif">Carte de Traçabilité</Heading>
+                    </Flex>
+                    <Box borderRadius="var(--cc-radius-lg)" overflow="hidden" border="1px solid var(--cc-line)" h="420px" position="relative" zIndex={1} className="cc-map-container" boxShadow="var(--cc-shadow-md)">
+                      <MapContainer center={mapPoints[0].position} zoom={10} style={{ height: '100%', width: '100%' }}>
+                        <TileLayer
+                          attribution='&copy; <a href="https://carto.com">CARTO</a>'
+                          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                        />
+                        {mapPoints.map((point, idx) => {
+                          const isFirst = idx === 0
+                          const isLast = idx === mapPoints.length - 1 && mapPoints.length > 1
+                          const color = isFirst ? MARKER_COLORS.origin : isLast ? MARKER_COLORS.last : MARKER_COLORS.verify
+                          return (
+                            <Marker key={idx} position={point.position} icon={createCustomIcon(color, isLast)}>
+                              <Popup>
+                                <div style={{ fontFamily: 'Inter, sans-serif' }}>
+                                  <strong style={{ color: '#2c1810', fontSize: '14px' }}>{point.label}</strong><br/>
+                                  <span style={{ color: '#5b3a29', fontSize: '12px' }}>{point.actor}</span><br/>
+                                  <span style={{ color: '#999', fontSize: '11px' }}>{point.position[0].toFixed(5)}, {point.position[1].toFixed(5)}</span>
+                                </div>
+                              </Popup>
+                            </Marker>
+                          )
+                        })}
+                        {pathPositions.length > 1 && (
+                          <Polyline 
+                            positions={pathPositions} 
+                            pathOptions={{ 
+                              color: '#c4973a', 
+                              weight: 3, 
+                              dashArray: '12, 8',
+                              opacity: 0.8,
+                              className: 'cc-animated-path'
+                            }} 
+                          />
+                        )}
+                      </MapContainer>
+                    </Box>
+                    {/* Map Legend */}
+                    <Flex mt="3" gap="5" justify="center" wrap="wrap">
+                      <Flex align="center" gap="2" fontSize="xs" color="var(--cc-cocoa)">
+                        <Box w="10px" h="10px" borderRadius="50%" bg={MARKER_COLORS.origin} border="2px solid white" boxShadow="0 1px 3px rgba(0,0,0,0.2)" />
+                        Origine
+                      </Flex>
+                      <Flex align="center" gap="2" fontSize="xs" color="var(--cc-cocoa)">
+                        <Box w="10px" h="10px" borderRadius="50%" bg={MARKER_COLORS.verify} border="2px solid white" boxShadow="0 1px 3px rgba(0,0,0,0.2)" />
+                        Validation / Certification
+                      </Flex>
+                      {mapPoints.length > 1 && (
+                        <Flex align="center" gap="2" fontSize="xs" color="var(--cc-cocoa)">
+                          <Box w="10px" h="10px" borderRadius="50%" bg={MARKER_COLORS.last} border="2px solid white" boxShadow="0 1px 3px rgba(0,0,0,0.2)" />
+                          Dernier point
+                        </Flex>
+                      )}
+                      <Flex align="center" gap="2" fontSize="xs" color="var(--cc-cocoa)">
+                        <Box w="20px" h="2px" bg={MARKER_COLORS.verify} style={{ borderTop: '2px dashed #c4973a' }} />
+                        Trajet
+                      </Flex>
+                    </Flex>
+                  </Box>
+                )}
               </Stack>
             </Box>
           </Box>

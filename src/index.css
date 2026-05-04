@@ -252,6 +252,167 @@ a { color: inherit; text-decoration: none; }
   animation: cc-gps-ring 1.8s ease-out infinite;
 }
 
+/* ─── Admin Dashboard Styles ─── */
+.cc-admin-danger {
+  --cc-danger-admin: #e74c3c;
+  --cc-danger-admin-bg: rgba(231, 76, 60, 0.06);
+  --cc-danger-admin-border: rgba(231, 76, 60, 0.2);
+}
+
+.cc-admin-log-row {
+  transition: all 0.2s var(--cc-transition);
+  border-left: 3px solid transparent;
+}
+
+.cc-admin-log-row:hover {
+  border-left-color: var(--cc-gold);
+  background: rgba(196, 151, 58, 0.03);
+}
+
+.cc-admin-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.cc-admin-badge--farmer { background: rgba(42, 110, 80, 0.1); color: var(--cc-olive); }
+.cc-admin-badge--cooperative { background: rgba(196, 151, 58, 0.12); color: var(--cc-gold); }
+.cc-admin-badge--verifier { background: rgba(66, 84, 102, 0.1); color: var(--cc-slate); }
+.cc-admin-badge--exporter { background: rgba(44, 24, 16, 0.08); color: var(--cc-cocoa); }
+.cc-admin-badge--admin { background: rgba(231, 76, 60, 0.1); color: #e74c3c; }
+
+.cc-admin-meta-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: var(--cc-radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  background: rgba(44, 24, 16, 0.04);
+  color: var(--cc-cocoa);
+  border: 1px solid var(--cc-line);
+}
+
+/* ─── Rejected Tab Accent ─── */
+.cc-rejected-surface {
+  background: rgba(231, 76, 60, 0.03);
+  border: 1px solid rgba(231, 76, 60, 0.12);
+  border-radius: var(--cc-radius-lg);
+  padding: 20px;
+}
+
+/* ─── GPS Acquisition Spinner ─── */
+@keyframes cc-satellite-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.cc-gps-spinner {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: rgba(196, 151, 58, 0.1);
+  color: var(--cc-gold);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.cc-gps-spinner::before {
+  content: '';
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(196, 151, 58, 0.3);
+  border-top-color: var(--cc-gold);
+  border-radius: 50%;
+  animation: cc-satellite-spin 1s linear infinite;
+}
+
+/* ─── Premium Map Styles ─── */
+.cc-map-container .leaflet-popup-content-wrapper {
+  background: var(--cc-surface-solid);
+  border: 1px solid var(--cc-line);
+  border-radius: var(--cc-radius-sm);
+  box-shadow: var(--cc-shadow-md);
+  font-family: 'Inter', sans-serif;
+}
+
+.cc-map-container .leaflet-popup-tip {
+  background: var(--cc-surface-solid);
+  border: 1px solid var(--cc-line);
+}
+
+.cc-map-container .leaflet-popup-content {
+  margin: 10px 14px;
+  font-size: 13px;
+  color: var(--cc-cocoa-deep);
+}
+
+.cc-map-marker-pulse {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  position: relative;
+}
+
+.cc-map-marker-pulse::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  opacity: 0.4;
+  animation: cc-gps-ring 2s ease-out infinite;
+}
+
+/* Animated SVG polyline path drawing */
+@keyframes cc-draw-path {
+  from { stroke-dashoffset: 2000; }
+  to { stroke-dashoffset: 0; }
+}
+
+.cc-animated-path {
+  stroke-dasharray: 2000;
+  animation: cc-draw-path 3s ease-in-out forwards;
+}
+
+/* ─── Users Table ─── */
+.cc-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.cc-table th {
+  text-align: left;
+  padding: 12px 16px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--cc-cocoa);
+  border-bottom: 2px solid var(--cc-line);
+}
+
+.cc-table td {
+  padding: 14px 16px;
+  font-size: 14px;
+  border-bottom: 1px solid var(--cc-line);
+  transition: background 0.2s;
+}
+
+.cc-table tbody tr:hover td {
+  background: rgba(196, 151, 58, 0.03);
+}
+
 /* ─── Reduced Motion ─── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

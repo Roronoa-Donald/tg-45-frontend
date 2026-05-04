@@ -10,6 +10,8 @@ const ROLE_ROUTES: Record<string, string> = {
   cooperative: '/cooperative',
   verifier: '/verifier',
   exporter: '/exporter',
+  admin: '/admin',
+  ministry: '/ministry',
 }
 
 export function LoginPage() {
@@ -31,8 +33,9 @@ export function LoginPage() {
 
       showToast('Session ouverte.', 'success')
       navigate(ROLE_ROUTES[user.role] || '/farmer', { replace: true })
-    } catch {
-      showToast('Impossible de se connecter.', 'error')
+    } catch (err: any) {
+      const msg = err?.message || 'Impossible de se connecter.'
+      showToast(msg, 'error')
     } finally {
       setSubmitting(false)
     }

@@ -8,6 +8,7 @@ import { system } from './theme'
 import { AuthProvider } from './context/AuthContext'
 import { SyncProvider } from './context/SyncContext'
 import { ToastProvider } from './context/ToastContext'
+import { I18nProvider } from './context/I18nContext'
 import { registerServiceWorker } from './lib/registerServiceWorker'
 
 registerServiceWorker()
@@ -16,13 +17,15 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ChakraProvider value={system}>
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <AuthProvider>
-          <SyncProvider>
-            <ToastProvider>
-              <App />
-            </ToastProvider>
-          </SyncProvider>
-        </AuthProvider>
+        <I18nProvider>
+          <AuthProvider>
+            <SyncProvider>
+              <ToastProvider>
+                <App />
+              </ToastProvider>
+            </SyncProvider>
+          </AuthProvider>
+        </I18nProvider>
       </BrowserRouter>
     </ChakraProvider>
   </StrictMode>,

@@ -199,3 +199,106 @@ export async function loadCooperativeMembers(token: string, cooperativeId: strin
     headers: authHeaders(token),
   })
 }
+
+export async function fetchLogs(token: string, filters: { date?: string; search?: string; role?: string }) {
+  const search = new URLSearchParams()
+
+  for (const [key, value] of Object.entries(filters)) {
+    if (value) {
+      search.set(key, String(value))
+    }
+  }
+  search.set('_t', Date.now().toString())
+
+  return request<{ items: any[]; meta?: Record<string, unknown> }>(`/audit?${search.toString()}`, {
+    headers: authHeaders(token),
+  })
+}
+
+export async function createUser(token: string, payload: Record<string, unknown>) {
+  return request<Record<string, unknown>>(`/admin/users`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function listUsers(token: string) {
+  return request<Record<string, unknown>[]>(`/admin/users?_t=${Date.now()}`, {
+    headers: authHeaders(token),
+  })
+}
+
+// ─── COOPERATIVE FARMERS & EXPORT ───
+
+export async function loadPendingFarmers(token: string, cooperativeId: string) {
+  return request<any[]>(`/cooperatives/${cooperativeId}/farmers/pending?_t=${Date.now()}`, {
+    headers: authHeaders(token),
+  })
+}
+
+export async function approveFarmer(token: string, cooperativeId: string, farmerId: string) {
+  return request<any>(`/cooperatives/${cooperativeId}/farmers/${farmerId}/approve`, {
+    method: 'PUT',
+    headers: authHeaders(token),
+  })
+}
+
+export async function loadActiveExporters(token: string) {
+  return request<any[]>(`/cooperatives/exporters?_t=${Date.now()}`, {
+    headers: authHeaders(token),
+  })
+}
+
+export async function exportLots(token: string, cooperativeId: string, exporterId: string, lots: { id: string, weightKg?: number }[]) {
+  return request<any>(`/cooperatives/${cooperativeId}/exports`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify({ exporterId, lots }),
+  })
+}
+
+// ─── EXPORTER ───
+
+export async function loadIncomingExports(token: string) {
+  return request<any[]>(`/exports/incoming?_t=${Date.now()}`, {
+    headers: authHeaders(token),
+  })
+}
+
+export async function acceptExport(token: string, exportId: string, gps?: { lat: number, lng: number }) {
+  return request<any>(`/exports/${exportId}/accept`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify({ gps }),
+  })
+}
+
+export async function rejectExport(token: string, exportId: string, reason?: string) {
+  return request<any>(`/exports/${exportId}/reject`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify({ reason }),
+  })
+}
+
+// ─── MINISTRY ───
+
+export async function loadMinistryKpis(token: string) {
+  return request<any>(`/ministry/kpis?_t=${Date.now()}`, {
+    headers: authHeaders(token),
+  })
+}
+
+export async function loadPendingMinistryApprovals(token: string) {
+  return request<any[]>(`/ministry/pending-approvals?_t=${Date.now()}`, {
+    headers: authHeaders(token),
+  })
+}
+
+export async function approveUserAsMinistry(token: string, userId: string) {
+  return request<any>(`/ministry/approve-user/${userId}`, {
+    method: 'POST',
+    headers: authHeaders(token),
+  })
+}

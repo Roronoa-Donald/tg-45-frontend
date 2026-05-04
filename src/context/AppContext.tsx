@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import * as localforage from 'localforage'
 import {
   DEMO_RESET_EVENT,
   EXPORTER_UI_STORAGE_KEY,
@@ -8,7 +9,6 @@ import {
 } from '../constants/storageKeys'
 import { cooperatives, farmers, lots as initialLots } from '../data/mockData'
 import type { Lot } from '../types'
-import { getStorageJson, setStorageJson } from '../utils/localStorage'
 
 interface AppContextValue {
   farmers: typeof farmers
@@ -27,13 +27,28 @@ interface Props {
 }
 
 export const AppProvider = ({ children }: Props) => {
-  const [lots, setLots] = useState<Lot[]>(() =>
-    getStorageJson<Lot[]>(LOTS_STORAGE_KEY, initialLots),
-  )
+  const [lots, setLots] = useState<Lot[]>(initialLots)
+  const [isLoaded, setIsLoaded] = useState(false)
 
+  // Initialization: load from localforage (IndexedDB)
   useEffect(() => {
-    setStorageJson(LOTS_STORAGE_KEY, lots)
-  }, [lots])
+    localforage.getItem<Lot[]>(LOTS_STORAGE_KEY).then((storedLots) => {
+      if (storedLots && storedLots.length > 0) {
+        setLots(storedLots)
+      }
+      setIsLoaded(true)
+    }).catch(err => {
+      console.error("Failed to load lots from localforage", err)
+      setIsLoaded(true)
+    })
+  }, [])
+
+  // Sync to localforage when lots change
+  useEffect(() => {
+    if (isLoaded) {
+      localforage.setItem(LOTS_STORAGE_KEY, lots).catch(console.error)
+    }
+  }, [lots, isLoaded])
 
   const addLot = useCallback((lot: Lot) => {
     setLots((previousLots) => [lot, ...previousLots])
@@ -54,9 +69,9 @@ export const AppProvider = ({ children }: Props) => {
 
   const resetDemoData = useCallback(() => {
     if (typeof window !== 'undefined') {
-      window.localStorage.removeItem(LOTS_STORAGE_KEY)
       window.localStorage.removeItem(VERIFY_QUERY_STORAGE_KEY)
       window.localStorage.removeItem(EXPORTER_UI_STORAGE_KEY)
+      localforage.removeItem(LOTS_STORAGE_KEY)
       window.dispatchEvent(new Event(DEMO_RESET_EVENT))
     }
 

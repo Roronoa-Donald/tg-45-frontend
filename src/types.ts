@@ -60,6 +60,8 @@ export interface Lot {
   certifications: string[]
   eudrCompliant: boolean
   imageUrl: string
+  scaleImageUrl?: string
+  coopProofImageUrl?: string
   journey: JourneyStep[]
 }
 
