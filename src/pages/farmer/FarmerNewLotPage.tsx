@@ -2,15 +2,15 @@ import { Camera, CheckCircle, MapPin, Check, X, Upload } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppData } from '../../context/AppContext'
-import { useAuth } from '../../hooks/useAuth'
+// import { useAuth } from '../../hooks/useAuth'
 import type { Lot } from '../../types'
 import { Box, Flex, Heading, Text, Icon, Spinner, Input } from '@chakra-ui/react'
 import imageCompression from 'browser-image-compression'
 
 export const FarmerNewLotPage = () => {
   const navigate = useNavigate()
-  const { farmers, lots, addLot } = useAppData()
-  const { user } = useAuth()
+  const { farmers, addLot } = useAppData()
+  // const { user } = useAuth()
   
   // Dans le vrai projet, on trouverait le farmer par son userId. Ici on prend le premier pour la démo.
   const farmer = farmers[0]
@@ -188,7 +188,7 @@ export const FarmerNewLotPage = () => {
             transition="all 0.2s"
           >
             {isCapturing ? (
-              <Spinner size="xl" color="white" thickness="4px" />
+              <Spinner size="xl" color="white" />
             ) : (
               <Icon as={Camera} w={24} h={24} color="white" />
             )}
@@ -264,7 +264,7 @@ export const FarmerNewLotPage = () => {
                 transition="all 0.2s"
               >
                 {isCapturing ? (
-                  <Spinner size="xl" color="white" thickness="4px" />
+                  <Spinner size="xl" color="white" />
                 ) : (
                   <Icon as={Camera} w={24} h={24} color="white" />
                 )}
@@ -303,7 +303,7 @@ export const FarmerNewLotPage = () => {
               transition="all 0.2s"
             >
               {isCapturing ? (
-                <Spinner size="xl" color="white" thickness="4px" />
+                <Spinner size="xl" color="white" />
               ) : (
                 <>
                   <Icon as={Upload} w={20} h={20} color="white" mb={2} />

@@ -1,4 +1,4 @@
-export type Role = 'farmer' | 'cooperative' | 'verifier' | 'exporter' | 'support' | 'admin'
+export type Role = 'farmer' | 'cooperative' | 'verifier' | 'exporter' | 'support' | 'admin' | 'ministry'
 
 export type LotStatus =
   | 'registered'
@@ -15,6 +15,7 @@ export type SyncMutationType =
   | 'updateVerificationStatus'
   | 'submitVerificationProof'
   | 'certifyLot'
+  | 'updateLotDetails'
 
 export interface SessionUser {
   id: string

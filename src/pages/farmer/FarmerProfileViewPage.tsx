@@ -1,4 +1,4 @@
-import { Button, Heading, Stack, Text, Box, Flex, Select } from '@chakra-ui/react'
+import { Button, Heading, Stack, Text, Box, Flex } from '@chakra-ui/react'
 import { useEffect, useState } from 'react'
 import { useAuth } from '../../hooks/useAuth'
 import { useLots } from '../../hooks/useLots'

@@ -37,7 +37,7 @@ export function CooperativeWorkspacePage() {
   const [transcriptionWeight, setTranscriptionWeight] = useState<string>('')
 
   const pendingWeighingLots = lots.filter((lot) => String(lot.status) === 'registered' && lot.weightKg === 0)
-  const registeredLots = lots.filter((lot) => String(lot.status) === 'registered' && lot.weightKg > 0)
+  const registeredLots = lots.filter((lot) => String(lot.status) === 'registered' && (lot.weightKg || 0) > 0)
   const validatedLots = lots.filter((lot) => String(lot.status) === 'validated' || String(lot.status) === 'pending')
   const rejectedLots = lots.filter((lot) => String(lot.status) === 'rejected')
   const certifiedLots = lots.filter((lot) => String(lot.status) === 'certified')
@@ -209,7 +209,7 @@ export function CooperativeWorkspacePage() {
                     <Box key={lot.id} position="relative" transition="transform 0.2s" _hover={{ transform: 'translateY(-2px)' }}>
                       <LotCard lot={lot} detailHref={`/lots/${encodeURIComponent(lot.id)}`} />
                       <Flex mt="2" gap="2">
-                        <button className="cc-btn-gold" style={{ flex: 1, padding: '8px', fontSize: '13px' }} onClick={() => openTranscription(lot)}>
+                        <button className="cc-btn-gold" style={{ flex: 1, padding: '8px', fontSize: '13px' }} onClick={() => openTranscription(lot as any)}>
                           👁️ Voir et Saisir Poids
                         </button>
                       </Flex>

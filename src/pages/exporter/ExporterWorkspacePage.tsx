@@ -1,4 +1,4 @@
-import { Box, Button, Flex, Heading, Stack, Text, Badge } from '@chakra-ui/react'
+import { Box, Button, Flex, Heading, Stack, Text } from '@chakra-ui/react'
 import { useEffect, useState } from 'react'
 import { useAuth } from '../../hooks/useAuth'
 import { useToast } from '../../context/ToastContext'

@@ -10,31 +10,31 @@ export function MinistryWorkspacePage() {
   
   const [kpis, setKpis] = useState<any>(null)
   const [pendingUsers, setPendingUsers] = useState<any[]>([])
-  const [loadingKpis, setLoadingKpis] = useState(false)
-  const [loadingApprovals, setLoadingApprovals] = useState(false)
+  // const [loadingKpis, setLoadingKpis] = useState(false)
+  // const [loadingApprovals, setLoadingApprovals] = useState(false)
   const [loadingId, setLoadingId] = useState<string | null>(null)
 
   const fetchKpis = async () => {
     if (!token) return
-    setLoadingKpis(true)
+    // setLoadingKpis(true)
     try {
       setKpis(await loadMinistryKpis(token))
     } catch {
       showToast('Erreur KPI', 'error')
     } finally {
-      setLoadingKpis(false)
+      // setLoadingKpis(false)
     }
   }
 
   const fetchApprovals = async () => {
     if (!token) return
-    setLoadingApprovals(true)
+    // setLoadingApprovals(true)
     try {
       setPendingUsers(await loadPendingMinistryApprovals(token))
     } catch {
       showToast('Erreur approbations', 'error')
     } finally {
-      setLoadingApprovals(false)
+      // setLoadingApprovals(false)
     }
   }
 

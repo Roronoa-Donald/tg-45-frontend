@@ -1,4 +1,4 @@
-import { Box, Button, Container, Flex, HStack, Stack, Text, IconButton } from '@chakra-ui/react'
+import { Box, Button, Container, Flex, HStack, Stack, Text } from '@chakra-ui/react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useSync } from '../hooks/useSync'

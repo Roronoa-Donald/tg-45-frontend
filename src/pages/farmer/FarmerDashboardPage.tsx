@@ -2,14 +2,14 @@ import { Box, Flex, Heading, SimpleGrid, Stack, Text, Icon } from '@chakra-ui/re
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { useLots } from '../../hooks/useLots'
-import { Package, FileText, Camera, RefreshCw } from 'lucide-react'
-import { useI18n } from '../../context/I18nContext'
+import { Package, Camera, RefreshCw } from 'lucide-react'
+// import { useI18n } from '../../context/I18nContext'
 
 export function FarmerDashboardPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { lots, draftLots } = useLots()
-  const { t } = useI18n()
+  // const { t } = useI18n()
 
   const handleVibrate = () => {
     if (navigator.vibrate) navigator.vibrate(50)

@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
-import { enqueueSyncBatch, createLot, certifyLot, submitVerificationProof, transferLot, verifyLotStatus, uploadLotImage } from '../lib/api'
+import { createLot, certifyLot, submitVerificationProof, transferLot, verifyLotStatus, uploadLotImage } from '../lib/api'
 import { deleteRecord, offlineStores, readAllRecords, writeRecord } from '../lib/idb'
 import { useAuth } from './AuthContext'
 import type { OfflineMutation, SyncMutationType } from '../domain/types'
