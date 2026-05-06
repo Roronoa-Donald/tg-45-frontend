@@ -338,24 +338,35 @@ export function CooperativeWorkspacePage() {
                 <Flex gap={4} direction={{ base: 'column', md: 'row' }}>
                   <Box flex="1">
                     <Text fontSize="sm" mb={2}>Photo du lot</Text>
-                    <Image 
-                      src={transcriptionLot.imageUrl || 'https://via.placeholder.com/300'} 
-                      borderRadius="md" 
-                      objectFit="cover" 
-                      h="200px" 
-                      w="100%" 
-                    />
+                    {transcriptionLot.imageUrl ? (
+                      <Image 
+                        src={transcriptionLot.imageUrl} 
+                        borderRadius="md" 
+                        objectFit="cover" 
+                        h="200px" 
+                        w="100%" 
+                      />
+                    ) : (
+                      <Box h="200px" w="100%" bg="gray.100" borderRadius="md" display="flex" alignItems="center" justifyContent="center">
+                        <Text color="gray.500" fontSize="sm">Pas de photo</Text>
+                      </Box>
+                    )}
                   </Box>
                   <Box flex="1">
                     <Text fontSize="sm" mb={2}>Photo de la balance</Text>
-                    <Image 
-                      src={transcriptionLot.scaleImageUrl || 'https://via.placeholder.com/300?text=Pas+de+balance'} 
-                      borderRadius="md" 
-                      objectFit="cover" 
-                      h="200px" 
-                      w="100%" 
-                      border={!transcriptionLot.scaleImageUrl ? "1px dashed red" : "none"}
-                    />
+                    {transcriptionLot.scaleImageUrl ? (
+                      <Image 
+                        src={transcriptionLot.scaleImageUrl} 
+                        borderRadius="md" 
+                        objectFit="cover" 
+                        h="200px" 
+                        w="100%" 
+                      />
+                    ) : (
+                      <Box h="200px" w="100%" bg="red.50" border="1px dashed red" borderRadius="md" display="flex" alignItems="center" justifyContent="center">
+                        <Text color="red.500" fontSize="sm">Pas de balance</Text>
+                      </Box>
+                    )}
                   </Box>
                 </Flex>
 
