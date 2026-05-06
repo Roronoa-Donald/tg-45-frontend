@@ -262,7 +262,7 @@ export function FarmerCapturePage() {
       showToast('Position GPS manquante.', 'warning')
       return
     }
-    if (!form.weightKg || Number(form.weightKg) <= 0) {
+    if (form.weightKg === '' || Number(form.weightKg) < 0) {
       showToast('Veuillez renseigner un poids valide.', 'warning')
       return
     }
@@ -397,7 +397,7 @@ export function FarmerCapturePage() {
 
                 <Stack gap="1">
                   <Text fontSize="sm" fontWeight="600" color="var(--cc-cocoa)">Poids (kg)</Text>
-                  <input className="cc-input" type="number" step="0.1" min="0.1" value={form.weightKg} onChange={(e) => setForm((c) => ({ ...c, weightKg: e.target.value }))} placeholder="Ex: 50.5" required />
+                  <input className="cc-input" type="number" step="0.1" min="0" value={form.weightKg} onChange={(e) => setForm((c) => ({ ...c, weightKg: e.target.value }))} placeholder="Ex: 50.5" required />
                 </Stack>
               </SimpleGrid>
 

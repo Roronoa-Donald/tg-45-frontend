@@ -143,14 +143,6 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     setSyncStatus('syncing')
 
     try {
-      const actions = queue.map((item) => ({
-        actionType: item.type,
-        clientRequestId: item.idempotencyKey,
-        payload: item.payload,
-      }))
-
-      await enqueueSyncBatch(token, actions)
-
       for (const item of queue) {
         await runMutation(token, item)
         await cleanupRelatedDraft(item)

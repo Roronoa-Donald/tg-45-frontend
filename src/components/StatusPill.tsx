@@ -1,4 +1,4 @@
-import { Box } from '@chakra-ui/react'
+import { Box, Flex } from '@chakra-ui/react'
 
 const VARIANTS: Record<string, { bg: string; color: string; border: string; label: string }> = {
   registered: { bg: 'rgba(196, 151, 58, 0.1)', color: 'var(--cc-gold)', border: 'var(--cc-gold-light)', label: 'Enregistré' },
@@ -6,6 +6,8 @@ const VARIANTS: Record<string, { bg: string; color: string; border: string; labe
   validated: { bg: 'rgba(42, 110, 80, 0.1)', color: 'var(--cc-olive)', border: 'var(--cc-olive)', label: 'Validé' },
   certified: { bg: 'rgba(42, 110, 80, 0.15)', color: '#27ae60', border: '#27ae60', label: 'Certifié' },
   shipped: { bg: 'rgba(66, 84, 102, 0.1)', color: 'var(--cc-slate)', border: 'var(--cc-slate)', label: 'Expédié' },
+  delivered: { bg: 'rgba(39, 174, 96, 0.1)', color: 'var(--cc-success)', border: 'var(--cc-success)', label: 'Livré' },
+  exported: { bg: 'rgba(39, 174, 96, 0.1)', color: 'var(--cc-success)', border: 'var(--cc-success)', label: 'Exporté' },
   in_transit: { bg: 'rgba(66, 84, 102, 0.1)', color: 'var(--cc-slate)', border: 'var(--cc-slate)', label: 'En transit' },
   rejected: { bg: 'rgba(192, 57, 43, 0.1)', color: 'var(--cc-danger)', border: 'var(--cc-danger)', label: 'Rejeté' },
   online: { bg: 'rgba(39, 174, 96, 0.1)', color: 'var(--cc-success)', border: 'var(--cc-success)', label: 'En ligne' },
@@ -19,28 +21,37 @@ const VARIANTS: Record<string, { bg: string; color: string; border: string; labe
 }
 
 export function StatusPill({ value, label }: { value: string; label?: string }) {
-  const variant = VARIANTS[value] ?? { bg: 'rgba(66, 84, 102, 0.1)', color: 'var(--cc-slate)', border: 'var(--cc-slate)', label: label || value }
+  const parts = value?.split(';') || [value];
 
   return (
-    <Box
-      display="inline-flex"
-      alignItems="center"
-      justifyContent="center"
-      bg={variant.bg}
-      color={variant.color}
-      border="1px solid"
-      borderColor="transparent"
-      borderRadius="full"
-      px="10px"
-      py="2px"
-      fontSize="xs"
-      fontWeight="700"
-      letterSpacing="0.02em"
-      textTransform="uppercase"
-      whiteSpace="nowrap"
-      style={{ borderBlockColor: `${variant.border}40` }} // 40 is hex for 25% opacity roughly
-    >
-      {label || variant.label}
-    </Box>
+    <Flex gap="2" wrap="wrap" display="inline-flex">
+      {parts.map((part, index) => {
+        const variant = VARIANTS[part] ?? { bg: 'rgba(66, 84, 102, 0.1)', color: 'var(--cc-slate)', border: 'var(--cc-slate)', label: index === 0 && label ? label : part }
+        return (
+          <Box
+            key={`${part}-${index}`}
+            display="inline-flex"
+            alignItems="center"
+            justifyContent="center"
+            bg={variant.bg}
+            color={variant.color}
+            border="1px solid"
+            borderColor="transparent"
+            borderRadius="full"
+            px="10px"
+            py="2px"
+            fontSize="xs"
+            fontWeight="700"
+            letterSpacing="0.02em"
+            textTransform="uppercase"
+            whiteSpace="nowrap"
+            style={{ borderBlockColor: `${variant.border}40` }}
+          >
+            {index === 0 && label ? label : variant.label}
+          </Box>
+        )
+      })}
+    </Flex>
   )
 }
+

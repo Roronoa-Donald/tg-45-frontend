@@ -16,7 +16,7 @@ export function RegisterPage() {
     try {
       await registerRequest({
         name: form.name,
-        phone: form.phone || undefined,
+        phone: form.identifier || form.phone || undefined,
         email: form.email || undefined,
         secret: form.secret,
         role: 'farmer',

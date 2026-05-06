@@ -238,7 +238,7 @@ export async function loadPendingFarmers(token: string, cooperativeId: string) {
 }
 
 export async function approveFarmer(token: string, cooperativeId: string, farmerId: string) {
-  return request<any>(`/cooperatives/${cooperativeId}/farmers/${farmerId}/approve`, {
+  return request<any>(`/cooperatives/${cooperativeId}/farmers/${farmerId}/accept-join`, {
     method: 'PUT',
     headers: authHeaders(token),
   })
@@ -298,6 +298,27 @@ export async function loadPendingMinistryApprovals(token: string) {
 
 export async function approveUserAsMinistry(token: string, userId: string) {
   return request<any>(`/ministry/approve-user/${userId}`, {
+    method: 'POST',
+    headers: authHeaders(token),
+  })
+}
+
+export async function rejectUserAsMinistry(token: string, userId: string, reason?: string) {
+  return request<any>(`/ministry/reject-user/${userId}`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify({ reason }),
+  })
+}
+
+export async function listCooperatives(token: string) {
+  return request<any[]>(`/cooperatives?_t=${Date.now()}`, {
+    headers: authHeaders(token),
+  })
+}
+
+export async function sendJoinRequest(token: string, cooperativeId: string) {
+  return request<any>(`/cooperatives/${cooperativeId}/join-request`, {
     method: 'POST',
     headers: authHeaders(token),
   })

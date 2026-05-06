@@ -1,4 +1,4 @@
-import { Box, Flex, Heading, Stack, Text, Tabs, Image, Input, Button, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from '@chakra-ui/react'
+import { Box, Flex, Heading, Stack, Text, Tabs, Image, Input, Button, DialogRoot, DialogContent, DialogHeader, DialogBody, DialogFooter, DialogBackdrop, DialogCloseTrigger } from '@chakra-ui/react'
 import { useState } from 'react'
 import { LotCard } from '../../components/LotCard'
 import { StatusPill } from '../../components/StatusPill'
@@ -30,7 +30,9 @@ export function CooperativeWorkspacePage() {
   const [acquiringGps, setAcquiringGps] = useState(false)
   
   // Transcription Modal State
-  const { isOpen, onOpen, onClose } = useDisclosure()
+  const [isOpen, setIsOpen] = useState(false)
+  const onOpen = () => setIsOpen(true)
+  const onClose = () => setIsOpen(false)
   const [transcriptionLot, setTranscriptionLot] = useState<Lot | null>(null)
   const [transcriptionWeight, setTranscriptionWeight] = useState<string>('')
 
@@ -324,16 +326,16 @@ export function CooperativeWorkspacePage() {
       </Tabs.Root>
 
       {/* Transcription Modal */}
-      <Modal isOpen={isOpen} onClose={onClose} size="xl">
-        <ModalOverlay backdropFilter="blur(4px)" />
-        <ModalContent>
-          <ModalHeader>Transcription du Poids</ModalHeader>
-          <ModalBody>
+      <DialogRoot open={isOpen} onOpenChange={(e) => setIsOpen(e.open)} size="xl">
+        <DialogBackdrop />
+        <DialogContent>
+          <DialogHeader>Transcription du Poids</DialogHeader>
+          <DialogBody>
             {transcriptionLot && (
               <Stack gap={4}>
                 <Text fontWeight="bold">Lot {transcriptionLot.id} - {transcriptionLot.farmerName}</Text>
                 
-                <Flex gap={4}>
+                <Flex gap={4} direction={{ base: 'column', md: 'row' }}>
                   <Box flex="1">
                     <Text fontSize="sm" mb={2}>Photo du lot</Text>
                     <Image 
@@ -374,18 +376,20 @@ export function CooperativeWorkspacePage() {
                 </Box>
               </Stack>
             )}
-          </ModalBody>
+          </DialogBody>
 
-          <ModalFooter>
-            <Button variant="ghost" mr={3} onClick={onClose}>
-              Annuler
-            </Button>
-            <Button colorScheme="green" onClick={submitTranscription} isLoading={loadingLotId === transcriptionLot?.id}>
+          <DialogFooter>
+            <DialogCloseTrigger asChild>
+              <Button variant="ghost" mr={3}>
+                Annuler
+              </Button>
+            </DialogCloseTrigger>
+            <Button colorPalette="green" onClick={submitTranscription} loading={loadingLotId === transcriptionLot?.id}>
               Enregistrer le Poids
             </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+          </DialogFooter>
+        </DialogContent>
+      </DialogRoot>
     </Stack>
   )
 }
