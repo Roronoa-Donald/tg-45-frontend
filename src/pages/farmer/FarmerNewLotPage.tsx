@@ -94,7 +94,7 @@ export const FarmerNewLotPage = () => {
     setIsCapturing(true)
 
     setTimeout(() => {
-      let lotId = `LOT-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`
+      const lotId = `LOT-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`
 
       const newLot: Lot = {
         id: lotId,

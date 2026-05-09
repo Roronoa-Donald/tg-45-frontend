@@ -5,19 +5,25 @@ import { useLots } from '../../hooks/useLots'
 import { useToast } from '../../context/ToastContext'
 import { listCooperatives, sendJoinRequest } from '../../lib/api'
 
+type CooperativeOption = {
+  id: string
+  name?: string
+  region?: string
+}
+
 export function FarmerProfileViewPage() {
   const { user, token, logout } = useAuth()
   const { draftLots, syncSummary } = useLots()
   const { showToast } = useToast()
 
-  const [cooperatives, setCooperatives] = useState<any[]>([])
+  const [cooperatives, setCooperatives] = useState<CooperativeOption[]>([])
   const [selectedCoop, setSelectedCoop] = useState<string>('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     if (token) {
       listCooperatives(token)
-        .then((data) => setCooperatives(data))
+        .then((data) => setCooperatives(data as CooperativeOption[]))
         .catch((err) => console.error('Failed to load cooperatives', err))
     }
   }, [token])
@@ -35,8 +41,9 @@ export function FarmerProfileViewPage() {
       await sendJoinRequest(token, selectedCoop)
       showToast('Demande d\'adhésion envoyée avec succès.', 'success')
       // Refresh user context or show a message
-    } catch (err: any) {
-      showToast(err.message || 'Erreur lors de la demande', 'error')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erreur lors de la demande'
+      showToast(message, 'error')
     } finally {
       setIsSubmitting(false)
     }

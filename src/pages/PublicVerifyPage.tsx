@@ -2,7 +2,7 @@ import { Box, Circle, DialogBody, DialogCloseTrigger, DialogContent, DialogHeade
 import { useEffect, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import type { PublicLotRecord } from '../domain/types'
+import type { LotEvent, PublicLotRecord } from '../domain/types'
 import { useLots } from '../hooks/useLots'
 import { EmptyState } from '../components/EmptyState'
 import { StatusPill } from '../components/StatusPill'
@@ -31,7 +31,7 @@ const MARKER_COLORS = {
   last: '#c0392b',      // red - last checkpoint
 }
 
-function AnimatedTimeline({ events }: { events: any[] }) {
+function AnimatedTimeline({ events }: { events: LotEvent[] }) {
   return (
     <Box position="relative" py="6" px="2">
       <Box position="absolute" left="27px" top="0" bottom="0" width="2px" bg="var(--cc-line)" />
@@ -91,16 +91,20 @@ export function PublicVerifyPage() {
   
   // ─── DEMO JITTER: Spread out points slightly if they overlap (testing on same PC) ───
   let jitterCount = 1;
-  record?.events?.forEach((e: any) => {
-    if (e.metadata?.gps?.lat && e.metadata?.gps?.lng) {
+  record?.events?.forEach((event) => {
+    const metadata = event.metadata && typeof event.metadata === 'object'
+      ? (event.metadata as { gps?: { lat?: number; lng?: number } })
+      : undefined
+    const gps = metadata?.gps
+    if (typeof gps?.lat === 'number' && typeof gps?.lng === 'number') {
       // Add a small ~2km artificial offset to simulate movement between actors
       const latOffset = (jitterCount * 0.015); 
       const lngOffset = (jitterCount * 0.025);
       
       mapPoints.push({
-        position: [e.metadata.gps.lat + latOffset, e.metadata.gps.lng + lngOffset],
-        label: formatLotEventLabel(e.eventType || e.action),
-        actor: e.actorName || 'Acteur inconnu'
+        position: [gps.lat + latOffset, gps.lng + lngOffset],
+        label: formatLotEventLabel(event.eventType || event.action),
+        actor: event.actorName || 'Acteur inconnu'
       })
       jitterCount++;
     }
@@ -156,7 +160,10 @@ export function PublicVerifyPage() {
                   <Text textTransform="uppercase" letterSpacing="0.2em" fontSize="xs" fontWeight="700" color="var(--cc-gold)">Lot Certifié</Text>
                   <Heading size="2xl" color="white" fontFamily="'Playfair Display', serif">{record.lotCode}</Heading>
                 </Stack>
-                <StatusPill value={record.status} />
+                <Flex gap="2" wrap="wrap">
+                  <StatusPill value={record.status} />
+                  {record.eudrStatus ? <StatusPill value={record.eudrStatus} /> : null}
+                </Flex>
               </Flex>
             </Box>
 
@@ -282,6 +289,20 @@ export function PublicVerifyPage() {
                     </Flex>
                   </Box>
                 )}
+
+                {record.parcels?.length ? (
+                  <Box>
+                    <Heading size="lg" color="var(--cc-cocoa-deep)" fontFamily="'Playfair Display', serif" mb="4">Parcelles</Heading>
+                    <Stack gap="3">
+                      {record.parcels.map((parcel, index) => (
+                        <Box key={`parcel-${index}`} className="cc-surface" p="4" borderRadius="var(--cc-radius-md)">
+                          <Text fontWeight="700" color="var(--cc-cocoa-deep)">{parcel.id || `Parcelle ${index + 1}`}</Text>
+                          <Text fontSize="sm" color="var(--cc-cocoa)" opacity="0.7">Type: {parcel.geometryType || '—'} · Surface: {parcel.areaHa ?? '—'} ha</Text>
+                        </Box>
+                      ))}
+                    </Stack>
+                  </Box>
+                ) : null}
               </Stack>
             </Box>
           </Box>

@@ -33,9 +33,9 @@ export function LoginPage() {
 
       showToast('Session ouverte.', 'success')
       navigate(ROLE_ROUTES[user.role] || '/farmer', { replace: true })
-    } catch (err: any) {
-      const msg = err?.message || 'Impossible de se connecter.'
-      showToast(msg, 'error')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Impossible de se connecter.'
+      showToast(message, 'error')
     } finally {
       setSubmitting(false)
     }

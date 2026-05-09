@@ -1,20 +1,36 @@
 import { Box, Badge, Button, Flex, Heading, Stack, Text, SimpleGrid } from '@chakra-ui/react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../../hooks/useAuth'
 import { useToast } from '../../context/ToastContext'
 import { loadMinistryKpis, loadPendingMinistryApprovals, approveUserAsMinistry, rejectUserAsMinistry } from '../../lib/api'
+
+type MinistryKpis = {
+  certifiedLotsCount?: number
+  totalWeightTonnes?: number
+  exportedLotsCount?: number
+  rejectedLotsCount?: number
+}
+
+type PendingUser = {
+  id: string
+  name?: string
+  role?: string
+  phone?: string
+  email?: string
+  createdAt?: string
+}
 
 export function MinistryWorkspacePage() {
   const { token } = useAuth()
   const { showToast } = useToast()
   
-  const [kpis, setKpis] = useState<any>(null)
-  const [pendingUsers, setPendingUsers] = useState<any[]>([])
+  const [kpis, setKpis] = useState<MinistryKpis | null>(null)
+  const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([])
   // const [loadingKpis, setLoadingKpis] = useState(false)
   // const [loadingApprovals, setLoadingApprovals] = useState(false)
   const [loadingId, setLoadingId] = useState<string | null>(null)
 
-  const fetchKpis = async () => {
+  const fetchKpis = useCallback(async () => {
     if (!token) return
     // setLoadingKpis(true)
     try {
@@ -24,24 +40,24 @@ export function MinistryWorkspacePage() {
     } finally {
       // setLoadingKpis(false)
     }
-  }
+  }, [showToast, token])
 
-  const fetchApprovals = async () => {
+  const fetchApprovals = useCallback(async () => {
     if (!token) return
     // setLoadingApprovals(true)
     try {
-      setPendingUsers(await loadPendingMinistryApprovals(token))
+      setPendingUsers((await loadPendingMinistryApprovals(token)) as PendingUser[])
     } catch {
       showToast('Erreur approbations', 'error')
     } finally {
       // setLoadingApprovals(false)
     }
-  }
+  }, [showToast, token])
 
   useEffect(() => {
     fetchKpis()
     fetchApprovals()
-  }, [token])
+  }, [fetchApprovals, fetchKpis])
 
   const handleApprove = async (userId: string) => {
     if (!token) return
@@ -51,8 +67,9 @@ export function MinistryWorkspacePage() {
       showToast('Acteur approuvé', 'success')
       fetchApprovals()
       fetchKpis()
-    } catch (err: any) {
-      showToast(err?.message || "Erreur lors de l'approbation", 'error')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Erreur lors de l'approbation"
+      showToast(message, 'error')
     } finally {
       setLoadingId(null)
     }
@@ -66,8 +83,9 @@ export function MinistryWorkspacePage() {
       showToast('Acteur refusé', 'info')
       fetchApprovals()
       fetchKpis()
-    } catch (err: any) {
-      showToast(err?.message || "Erreur lors du refus", 'error')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Erreur lors du refus"
+      showToast(message, 'error')
     } finally {
       setLoadingId(null)
     }
@@ -128,10 +146,10 @@ export function MinistryWorkspacePage() {
                 <Stack gap="1">
                   <Flex gap="3" align="center">
                     <Heading size="sm" color="var(--cc-cocoa-deep)">{u.name || 'Sans nom'}</Heading>
-                    <Badge fontSize="xs" bg="var(--cc-cocoa-deep)" color="white" borderRadius="sm" px="2">{roleMap[u.role] || u.role}</Badge>
+                    <Badge fontSize="xs" bg="var(--cc-cocoa-deep)" color="white" borderRadius="sm" px="2">{roleMap[u.role ?? ''] || u.role || '—'}</Badge>
                   </Flex>
                   <Text fontSize="sm" color="var(--cc-cocoa)" opacity="0.8">Contact: {u.phone || u.email || 'N/A'}</Text>
-                  <Text fontSize="xs" color="var(--cc-cocoa)" opacity="0.6">Inscrit le {new Date(u.createdAt).toLocaleDateString()}</Text>
+                  <Text fontSize="xs" color="var(--cc-cocoa)" opacity="0.6">Inscrit le {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—'}</Text>
                 </Stack>
                 <Flex gap="2">
                   <Button 

@@ -26,7 +26,8 @@ export function RegisterPage() {
       showToast('Inscription réussie. Vous pouvez maintenant vous connecter.', 'success')
       navigate('/login')
     } catch (err) {
-      showToast('Impossible de créer le compte.', 'error')
+      const message = err instanceof Error ? err.message : 'Impossible de créer le compte.'
+      showToast(message, 'error')
     } finally {
       setSubmitting(false)
     }

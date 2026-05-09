@@ -105,7 +105,8 @@ export async function getLot(token: string, id: string) {
 
 export async function createLot(token: string, payload: Record<string, unknown>, idempotencyKey: string) {
   // Strip photoDataUrl from register payload — it's uploaded separately via uploadLotImage
-  const { photoDataUrl: _photo, ...cleanPayload } = payload
+  const { photoDataUrl, ...cleanPayload } = payload
+  void photoDataUrl
   return request<Record<string, unknown>>('/lots/register', {
     method: 'POST',
     headers: authHeaders(token, idempotencyKey),
@@ -141,6 +142,14 @@ export async function uploadLotImage(token: string, lotId: string, photoDataUrl:
 export async function transferLot(token: string, lotId: string, payload: Record<string, unknown>) {
   return request<Record<string, unknown>>(`/lots/${lotId}/transfer`, {
     method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function updateLotDetails(token: string, lotId: string, payload: Record<string, unknown>) {
+  return request<Record<string, unknown>>(`/lots/${lotId}/details`, {
+    method: 'PUT',
     headers: authHeaders(token),
     body: JSON.stringify(payload),
   })
@@ -200,6 +209,123 @@ export async function loadCooperativeMembers(token: string, cooperativeId: strin
   })
 }
 
+// ─── PARCELS ───
+
+export async function listParcels(token: string) {
+  return request<Record<string, unknown>[]>(`/parcels?_t=${Date.now()}`, {
+    headers: authHeaders(token),
+  })
+}
+
+export async function createParcel(token: string, payload: Record<string, unknown>) {
+  return request<Record<string, unknown>>('/parcels', {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function updateParcel(token: string, parcelId: string, payload: Record<string, unknown>) {
+  return request<Record<string, unknown>>(`/parcels/${parcelId}`, {
+    method: 'PUT',
+    headers: authHeaders(token),
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function linkLotParcel(token: string, lotId: string, payload: Record<string, unknown>) {
+  return request<Record<string, unknown>>(`/lots/${lotId}/parcels`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function listLotParcels(token: string, lotId: string) {
+  return request<Record<string, unknown>[]>(`/lots/${lotId}/parcels`, {
+    headers: authHeaders(token),
+  })
+}
+
+export async function unlinkLotParcel(token: string, lotId: string, parcelId: string) {
+  return request<Record<string, unknown>>(`/lots/${lotId}/parcels/${parcelId}`, {
+    method: 'DELETE',
+    headers: authHeaders(token),
+  })
+}
+
+// ─── EUDR DDR ───
+
+export async function createDdr(token: string, payload: Record<string, unknown>) {
+  return request<Record<string, unknown>>('/eudr/ddr', {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function updateDdr(token: string, ddId: string, payload: Record<string, unknown>) {
+  return request<Record<string, unknown>>(`/eudr/ddr/${ddId}`, {
+    method: 'PUT',
+    headers: authHeaders(token),
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function getDdr(token: string, ddId: string) {
+  return request<Record<string, unknown>>(`/eudr/ddr/${ddId}`, {
+    headers: authHeaders(token),
+  })
+}
+
+export async function approveDdr(token: string, ddId: string, payload: Record<string, unknown>) {
+  return request<Record<string, unknown>>(`/eudr/ddr/${ddId}/approve`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function addDdrDocument(token: string, ddId: string, payload: Record<string, unknown>) {
+  return request<Record<string, unknown>>(`/eudr/ddr/${ddId}/documents`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function createDeforestationCheck(token: string, payload: Record<string, unknown>) {
+  return request<Record<string, unknown>>('/eudr/checks/deforestation', {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function createLegalityCheck(token: string, payload: Record<string, unknown>) {
+  return request<Record<string, unknown>>('/eudr/checks/legality', {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function generateDeclaration(token: string, ddId: string) {
+  return request<Record<string, unknown>>('/eudr/declarations/generate', {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify({ ddId }),
+  })
+}
+
+export async function submitDeclaration(token: string, ddId: string, referenceNo: string) {
+  return request<Record<string, unknown>>('/eudr/declarations/submit', {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify({ ddId, referenceNo }),
+  })
+}
+
 export async function fetchLogs(token: string, filters: { date?: string; search?: string; role?: string }) {
   const search = new URLSearchParams()
 
@@ -210,7 +336,7 @@ export async function fetchLogs(token: string, filters: { date?: string; search?
   }
   search.set('_t', Date.now().toString())
 
-  return request<{ items: any[]; meta?: Record<string, unknown> }>(`/audit?${search.toString()}`, {
+  return request<{ items: Record<string, unknown>[]; meta?: Record<string, unknown> }>(`/audit?${search.toString()}`, {
     headers: authHeaders(token),
   })
 }
@@ -232,42 +358,48 @@ export async function listUsers(token: string) {
 // ─── COOPERATIVE FARMERS & EXPORT ───
 
 export async function loadPendingFarmers(token: string, cooperativeId: string) {
-  return request<any[]>(`/cooperatives/${cooperativeId}/farmers/pending?_t=${Date.now()}`, {
+  return request<Record<string, unknown>[]>(`/cooperatives/${cooperativeId}/farmers/pending?_t=${Date.now()}`, {
     headers: authHeaders(token),
   })
 }
 
 export async function approveFarmer(token: string, cooperativeId: string, farmerId: string) {
-  return request<any>(`/cooperatives/${cooperativeId}/farmers/${farmerId}/accept-join`, {
+  return request<Record<string, unknown>>(`/cooperatives/${cooperativeId}/farmers/${farmerId}/accept-join`, {
     method: 'PUT',
     headers: authHeaders(token),
   })
 }
 
 export async function loadActiveExporters(token: string) {
-  return request<any[]>(`/cooperatives/exporters?_t=${Date.now()}`, {
+  return request<Record<string, unknown>[]>(`/cooperatives/exporters?_t=${Date.now()}`, {
     headers: authHeaders(token),
   })
 }
 
-export async function exportLots(token: string, cooperativeId: string, exporterId: string, lots: { id: string, weightKg?: number }[]) {
-  return request<any>(`/cooperatives/${cooperativeId}/exports`, {
+export async function exportLots(
+  token: string,
+  cooperativeId: string,
+  exporterId: string,
+  lots: { id: string; weightKg?: number }[],
+  ddId?: string
+) {
+  return request<Record<string, unknown>>(`/cooperatives/${cooperativeId}/exports`, {
     method: 'POST',
     headers: authHeaders(token),
-    body: JSON.stringify({ exporterId, lots }),
+    body: JSON.stringify({ exporterId, lots, ddId }),
   })
 }
 
 // ─── EXPORTER ───
 
 export async function loadIncomingExports(token: string) {
-  return request<any[]>(`/exports/incoming?_t=${Date.now()}`, {
+  return request<Record<string, unknown>[]>(`/exports/incoming?_t=${Date.now()}`, {
     headers: authHeaders(token),
   })
 }
 
 export async function acceptExport(token: string, exportId: string, gps?: { lat: number, lng: number }) {
-  return request<any>(`/exports/${exportId}/accept`, {
+  return request<Record<string, unknown>>(`/exports/${exportId}/accept`, {
     method: 'POST',
     headers: authHeaders(token),
     body: JSON.stringify({ gps }),
@@ -275,7 +407,7 @@ export async function acceptExport(token: string, exportId: string, gps?: { lat:
 }
 
 export async function rejectExport(token: string, exportId: string, reason?: string) {
-  return request<any>(`/exports/${exportId}/reject`, {
+  return request<Record<string, unknown>>(`/exports/${exportId}/reject`, {
     method: 'POST',
     headers: authHeaders(token),
     body: JSON.stringify({ reason }),
@@ -285,26 +417,26 @@ export async function rejectExport(token: string, exportId: string, reason?: str
 // ─── MINISTRY ───
 
 export async function loadMinistryKpis(token: string) {
-  return request<any>(`/ministry/kpis?_t=${Date.now()}`, {
+  return request<Record<string, unknown>>(`/ministry/kpis?_t=${Date.now()}`, {
     headers: authHeaders(token),
   })
 }
 
 export async function loadPendingMinistryApprovals(token: string) {
-  return request<any[]>(`/ministry/pending-approvals?_t=${Date.now()}`, {
+  return request<Record<string, unknown>[]>(`/ministry/pending-approvals?_t=${Date.now()}`, {
     headers: authHeaders(token),
   })
 }
 
 export async function approveUserAsMinistry(token: string, userId: string) {
-  return request<any>(`/ministry/approve-user/${userId}`, {
+  return request<Record<string, unknown>>(`/ministry/approve-user/${userId}`, {
     method: 'POST',
     headers: authHeaders(token),
   })
 }
 
 export async function rejectUserAsMinistry(token: string, userId: string, reason?: string) {
-  return request<any>(`/ministry/reject-user/${userId}`, {
+  return request<Record<string, unknown>>(`/ministry/reject-user/${userId}`, {
     method: 'POST',
     headers: authHeaders(token),
     body: JSON.stringify({ reason }),
@@ -312,13 +444,13 @@ export async function rejectUserAsMinistry(token: string, userId: string, reason
 }
 
 export async function listCooperatives(token: string) {
-  return request<any[]>(`/cooperatives?_t=${Date.now()}`, {
+  return request<Record<string, unknown>[]>(`/cooperatives?_t=${Date.now()}`, {
     headers: authHeaders(token),
   })
 }
 
 export async function sendJoinRequest(token: string, cooperativeId: string) {
-  return request<any>(`/cooperatives/${cooperativeId}/join-request`, {
+  return request<Record<string, unknown>>(`/cooperatives/${cooperativeId}/join-request`, {
     method: 'POST',
     headers: authHeaders(token),
   })

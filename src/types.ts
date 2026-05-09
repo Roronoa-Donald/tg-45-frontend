@@ -4,7 +4,10 @@ export type LotStatus =
   | 'registered'
   | 'in_transit'
   | 'validated'
+  | 'certified'
+  | 'shipped'
   | 'exported'
+  | 'delivered'
   | 'rejected'
   | 'pending'
 

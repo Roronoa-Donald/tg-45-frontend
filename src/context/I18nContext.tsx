@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react'
+/* eslint-disable react-refresh/only-export-components */
+import React, { createContext, useContext, useState } from 'react'
 
 type Language = 'fr' | 'ee'
 
@@ -57,21 +58,24 @@ interface I18nContextType {
 
 const I18nContext = createContext<I18nContextType | null>(null)
 
-export function I18nProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguage] = useState<Language>('fr')
-  const [isSpeaking, setIsSpeaking] = useState(false)
+const getInitialLanguage = (): Language => {
+  if (typeof window === 'undefined') {
+    return 'fr'
+  }
 
-  // Try to load saved language
-  useEffect(() => {
-    const saved = localStorage.getItem('cc_language') as Language
-    if (saved && (saved === 'fr' || saved === 'ee')) {
-      setLanguage(saved)
-    }
-  }, [])
+  const saved = localStorage.getItem('cc_language') as Language | null
+  return saved === 'fr' || saved === 'ee' ? saved : 'fr'
+}
+
+export function I18nProvider({ children }: { children: React.ReactNode }) {
+  const [language, setLanguage] = useState<Language>(() => getInitialLanguage())
+  const [isSpeaking, setIsSpeaking] = useState(false)
 
   const handleSetLanguage = (lang: Language) => {
     setLanguage(lang)
-    localStorage.setItem('cc_language', lang)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('cc_language', lang)
+    }
   }
 
   const t = (key: string): string => {

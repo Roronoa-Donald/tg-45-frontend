@@ -1,28 +1,36 @@
 import { Box, Button, Flex, Heading, Stack, Text } from '@chakra-ui/react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../../hooks/useAuth'
 import { useToast } from '../../context/ToastContext'
 import { loadPendingFarmers, approveFarmer } from '../../lib/api'
 
+type PendingFarmer = {
+  id: string
+  name?: string
+  phone?: string
+  farmName?: string
+  location?: string
+}
+
 export function CooperativeFarmersTab() {
   const { token, user } = useAuth()
   const { showToast } = useToast()
-  const [farmers, setFarmers] = useState<any[]>([])
+  const [farmers, setFarmers] = useState<PendingFarmer[]>([])
   const [loadingId, setLoadingId] = useState<string | null>(null)
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!token || !user?.cooperativeId) return
     try {
       const data = await loadPendingFarmers(token, user.cooperativeId)
-      setFarmers(data)
+      setFarmers(data as PendingFarmer[])
     } catch {
       showToast('Erreur lors du chargement des agriculteurs', 'error')
     }
-  }
+  }, [showToast, token, user?.cooperativeId])
 
   useEffect(() => {
-    load()
-  }, [token, user])
+    void load()
+  }, [load])
 
   const handleApprove = async (farmerId: string) => {
     if (!token || !user?.cooperativeId) return

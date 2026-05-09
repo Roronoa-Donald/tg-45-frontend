@@ -14,12 +14,63 @@ export const loginSchema = z.object({
 export const lotRegisterSchema = z.object({
   product: z.string().min(2),
   variety: z.string().optional(),
+  hsCode: z.string().optional(),
+  originCountry: z.string().optional(),
+  originRegion: z.string().optional(),
   weightKg: z.number().positive(),
   harvestDate: z.string().optional(),
+  productionStartDate: z.string().optional(),
+  productionEndDate: z.string().optional(),
   gpsOriginLat: z.number(),
   gpsOriginLng: z.number(),
   gpsPrecisionM: z.number().int().positive(),
   cooperativeId: z.string().optional(),
+})
+
+export const parcelSchema = z.object({
+  name: z.string().optional(),
+  cooperativeId: z.string().uuid().optional(),
+  countryCode: z.string().optional(),
+  region: z.string().optional(),
+  district: z.string().optional(),
+  locality: z.string().optional(),
+  geometryType: z.enum(['point', 'polygon']),
+  geometry: z.object({
+    type: z.enum(['Point', 'Polygon']),
+    coordinates: z.any(),
+  }),
+  areaHa: z.number().optional(),
+})
+
+export const ddrSchema = z.object({
+  lotId: z.string().uuid().optional(),
+  exportId: z.string().uuid().optional(),
+  riskLevel: z.enum(['low', 'standard', 'high']).optional(),
+  assessmentSummary: z.string().optional(),
+  mitigationSummary: z.string().optional(),
+})
+
+export const ddrDocumentSchema = z.object({
+  docType: z.string().min(2),
+  url: z.string().url(),
+  checksum: z.string().optional(),
+  issuedAt: z.string().optional(),
+})
+
+export const deforestationCheckSchema = z.object({
+  parcelId: z.string().uuid(),
+  source: z.string().min(2),
+  checkDate: z.string(),
+  result: z.enum(['pass', 'fail', 'unknown']),
+  confidence: z.number().optional(),
+  evidenceUrl: z.string().optional(),
+})
+
+export const legalityCheckSchema = z.object({
+  ddId: z.string().uuid(),
+  checkType: z.string().min(2),
+  status: z.enum(['pass', 'fail', 'unknown']),
+  evidenceUrl: z.string().optional(),
 })
 
 export const lotTransferSchema = z.object({
@@ -29,6 +80,7 @@ export const lotTransferSchema = z.object({
 export const verificationStatusSchema = z.object({
   status: z.string().min(3),
   reason: z.string().optional(),
+  gps: z.object({ lat: z.number(), lng: z.number() }).optional(),
 })
 
 export const verificationProofSchema = z.object({
@@ -38,6 +90,7 @@ export const verificationProofSchema = z.object({
 
 export const certificationSchema = z.object({
   signature: z.string().min(8).optional(),
+  gps: z.object({ lat: z.number(), lng: z.number() }).optional(),
 })
 
 export const syncActionSchema = z.object({

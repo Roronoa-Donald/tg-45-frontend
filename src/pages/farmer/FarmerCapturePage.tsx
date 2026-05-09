@@ -168,7 +168,17 @@ export function FarmerCapturePage() {
   const [photoUri, setPhotoUri] = useState<string | null>(null)
   const [gpsState, setGpsState] = useState<GpsState>('idle')
   const [gps, setGps] = useState<GpsData | null>(null)
-  const [form, setForm] = useState({ variety: 'Trinitario', weightKg: '', harvestDate: new Date().toISOString().split('T')[0] })
+  const [form, setForm] = useState({
+    variety: 'Trinitario',
+    weightKg: '',
+    harvestDate: new Date().toISOString().split('T')[0],
+    hsCode: '1801',
+    originCountry: 'TG',
+    originRegion: '',
+    productionStartDate: '',
+    productionEndDate: '',
+    parcelIdsText: '',
+  })
   const [submitting, setSubmitting] = useState(false)
   const [watchId, setWatchId] = useState<number | null>(null)
 
@@ -226,10 +236,7 @@ export function FarmerCapturePage() {
   // Request GPS on mount
   useEffect(() => {
     requestGps()
-    return () => {
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }
-  }, []) // Only on mount
+  }, [requestGps])
 
   // Cleanup watch on unmount
   useEffect(() => {
@@ -273,14 +280,23 @@ export function FarmerCapturePage() {
     try {
       const draftId = `draft-${Date.now()}`
       const idempotencyKey = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`
+      const parcelIds = form.parcelIdsText
+        ? form.parcelIdsText.split(',').map((value) => value.trim()).filter(Boolean)
+        : undefined
 
       const draft = {
         id: draftId,
         title: `LOT-${Date.now()}`,
         product: 'Cacao',
         variety: form.variety,
+        hsCode: form.hsCode || undefined,
+        originCountry: form.originCountry || undefined,
+        originRegion: form.originRegion || undefined,
         weightKg: Number(form.weightKg),
         harvestDate: form.harvestDate,
+        productionStartDate: form.productionStartDate || undefined,
+        productionEndDate: form.productionEndDate || undefined,
+        parcelIds,
         gpsOriginLat: gps.lat,
         gpsOriginLng: gps.lng,
         gpsPrecisionM: Math.round(gps.precisionM),
@@ -404,6 +420,37 @@ export function FarmerCapturePage() {
               <Stack gap="1">
                 <Text fontSize="sm" fontWeight="600" color="var(--cc-cocoa)">Date de récolte</Text>
                 <input className="cc-input" type="date" value={form.harvestDate} onChange={(e) => setForm((c) => ({ ...c, harvestDate: e.target.value }))} />
+              </Stack>
+
+              <Stack gap="2" pt="2">
+                <Heading size="sm" color="var(--cc-cocoa-deep)" fontFamily="'Playfair Display', serif">EUDR (optionnel)</Heading>
+                <Text fontSize="xs" color="var(--cc-cocoa)" opacity="0.6">Renseignez ces champs si disponibles.</Text>
+                <SimpleGrid columns={2} gap="4">
+                  <Stack gap="1">
+                    <Text fontSize="sm" fontWeight="600" color="var(--cc-cocoa)">Code HS</Text>
+                    <input className="cc-input" value={form.hsCode} onChange={(e) => setForm((c) => ({ ...c, hsCode: e.target.value }))} />
+                  </Stack>
+                  <Stack gap="1">
+                    <Text fontSize="sm" fontWeight="600" color="var(--cc-cocoa)">Pays d'origine</Text>
+                    <input className="cc-input" value={form.originCountry} onChange={(e) => setForm((c) => ({ ...c, originCountry: e.target.value }))} />
+                  </Stack>
+                  <Stack gap="1">
+                    <Text fontSize="sm" fontWeight="600" color="var(--cc-cocoa)">Région d'origine</Text>
+                    <input className="cc-input" value={form.originRegion} onChange={(e) => setForm((c) => ({ ...c, originRegion: e.target.value }))} />
+                  </Stack>
+                  <Stack gap="1">
+                    <Text fontSize="sm" fontWeight="600" color="var(--cc-cocoa)">Début production</Text>
+                    <input className="cc-input" type="date" value={form.productionStartDate} onChange={(e) => setForm((c) => ({ ...c, productionStartDate: e.target.value }))} />
+                  </Stack>
+                  <Stack gap="1">
+                    <Text fontSize="sm" fontWeight="600" color="var(--cc-cocoa)">Fin production</Text>
+                    <input className="cc-input" type="date" value={form.productionEndDate} onChange={(e) => setForm((c) => ({ ...c, productionEndDate: e.target.value }))} />
+                  </Stack>
+                  <Stack gap="1">
+                    <Text fontSize="sm" fontWeight="600" color="var(--cc-cocoa)">Parcelles (IDs)</Text>
+                    <input className="cc-input" value={form.parcelIdsText} onChange={(e) => setForm((c) => ({ ...c, parcelIdsText: e.target.value }))} placeholder="parcel-uuid-1, parcel-uuid-2" />
+                  </Stack>
+                </SimpleGrid>
               </Stack>
 
               <Flex gap="3" pt="4">

@@ -7,16 +7,19 @@ import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
 import { PublicVerifyPage } from './pages/PublicVerifyPage'
 import { LotDetailPage } from './pages/LotDetailPage'
+import { ParcelsPage } from './pages/ParcelsPage'
 import { FarmerDashboardPage } from './pages/farmer/FarmerDashboardPage'
 import { FarmerCapturePage } from './pages/farmer/FarmerCapturePage'
 import { FarmerLotsViewPage } from './pages/farmer/FarmerLotsViewPage'
 import { FarmerProfileViewPage } from './pages/farmer/FarmerProfileViewPage'
 import { DraftsPage } from './pages/farmer/DraftsPage'
 import { CooperativeWorkspacePage } from './pages/cooperative/CooperativeWorkspacePage'
+import { CooperativeExportsPage } from './pages/cooperative/CooperativeExportsPage'
 import { VerifierWorkspacePage } from './pages/verifier/VerifierWorkspacePage'
 import { ExporterWorkspacePage } from './pages/exporter/ExporterWorkspacePage'
 import { AdminWorkspacePage } from './pages/admin/AdminWorkspacePage'
 import { MinistryWorkspacePage } from './pages/ministry/MinistryWorkspacePage'
+import { ComplianceWorkspacePage } from './pages/compliance/ComplianceWorkspacePage'
 
 function App() {
   return (
@@ -35,6 +38,7 @@ function App() {
         }
       >
         <Route path="/lots/:lotId" element={<LotDetailPage />} />
+        <Route path="/parcels" element={<ParcelsPage />} />
 
         <Route
           path="/farmer"
@@ -60,6 +64,7 @@ function App() {
           }
         >
           <Route index element={<CooperativeWorkspacePage />} />
+          <Route path="exports" element={<CooperativeExportsPage />} />
         </Route>
 
         <Route
@@ -82,6 +87,17 @@ function App() {
           }
         >
           <Route index element={<ExporterWorkspacePage />} />
+        </Route>
+
+        <Route
+          path="/compliance"
+          element={
+            <RequireRole role="compliance">
+              <Outlet />
+            </RequireRole>
+          }
+        >
+          <Route index element={<ComplianceWorkspacePage />} />
         </Route>
 
         <Route

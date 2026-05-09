@@ -4,20 +4,28 @@ import { useAuth } from '../../hooks/useAuth'
 import { useToast } from '../../context/ToastContext'
 import { loadActiveExporters, exportLots } from '../../lib/api'
 import { LotCard } from '../../components/LotCard'
+import type { LotRecord } from '../../domain/types'
 
-export function CooperativeExportTab({ certifiedLots, refreshLots }: { certifiedLots: any[], refreshLots: () => void }) {
+type ExporterRecord = {
+  id: string
+  name?: string
+  email?: string
+}
+
+export function CooperativeExportTab({ certifiedLots, refreshLots }: { certifiedLots: LotRecord[]; refreshLots: () => void }) {
   const { token, user } = useAuth()
   const { showToast } = useToast()
-  const [exporters, setExporters] = useState<any[]>([])
+  const [exporters, setExporters] = useState<ExporterRecord[]>([])
   const [selectedExporterId, setSelectedExporterId] = useState('')
   const [selectedLots, setSelectedLots] = useState<Record<string, boolean>>({})
   const [lotWeights, setLotWeights] = useState<Record<string, number>>({})
+  const [ddId, setDdId] = useState('')
   const [exporting, setExporting] = useState(false)
 
   useEffect(() => {
     if (!token) return
     loadActiveExporters(token)
-      .then(setExporters)
+      .then((data) => setExporters(data as ExporterRecord[]))
       .catch(() => showToast('Erreur lors du chargement des exportateurs', 'error'))
   }, [token, showToast])
 
@@ -32,11 +40,13 @@ export function CooperativeExportTab({ certifiedLots, refreshLots }: { certified
     setLotWeights(prev => ({ ...prev, [lotId]: weight }))
   }
 
+  const eligibleLots = certifiedLots.filter((lot) => ['approved', 'submitted'].includes(String(lot.eudrStatus || '')))
+
   const handleExport = async () => {
     if (!selectedExporterId) return showToast("Veuillez sélectionner un exportateur", 'warning')
     
     const lotsToExport = Object.entries(selectedLots)
-      .filter(([_, isSelected]) => isSelected)
+      .filter(([, isSelected]) => isSelected)
       .map(([lotId]) => ({
         id: lotId,
         weightKg: lotWeights[lotId]
@@ -48,13 +58,15 @@ export function CooperativeExportTab({ certifiedLots, refreshLots }: { certified
 
     setExporting(true)
     try {
-      await exportLots(token, user.cooperativeId, selectedExporterId, lotsToExport)
+      await exportLots(token, user.cooperativeId, selectedExporterId, lotsToExport, ddId || undefined)
       showToast('Exportation réussie !', 'success')
       setSelectedLots({})
       setSelectedExporterId('')
+      setDdId('')
       refreshLots()
-    } catch (err: any) {
-      showToast(err?.message || "Erreur lors de l'exportation", 'error')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Erreur lors de l'exportation"
+      showToast(message, 'error')
     } finally {
       setExporting(false)
     }
@@ -62,7 +74,7 @@ export function CooperativeExportTab({ certifiedLots, refreshLots }: { certified
 
   const totalSelectedLots = Object.values(selectedLots).filter(Boolean).length
   const totalWeight = Object.entries(selectedLots)
-    .filter(([_, isSelected]) => isSelected)
+    .filter(([, isSelected]) => isSelected)
     .reduce((sum, [lotId]) => sum + (lotWeights[lotId] || 0), 0)
 
   return (
@@ -70,19 +82,19 @@ export function CooperativeExportTab({ certifiedLots, refreshLots }: { certified
       <Stack flex="2" gap="4">
         <Heading size="md" color="var(--cc-cocoa-deep)" fontFamily="'Playfair Display', serif">Lots disponibles pour l'exportation</Heading>
         
-        {certifiedLots.length === 0 ? (
+        {eligibleLots.length === 0 ? (
           <Box p="8" textAlign="center" border="1px dashed var(--cc-line)" borderRadius="var(--cc-radius-md)">
-            <Text color="var(--cc-cocoa)" opacity="0.5">Aucun lot certifié disponible.</Text>
+            <Text color="var(--cc-cocoa)" opacity="0.5">Aucun lot certifié EUDR approuvé.</Text>
           </Box>
         ) : null}
 
-        {certifiedLots.map((lot) => (
+        {eligibleLots.map((lot) => (
           <Flex key={lot.id} className="cc-surface" p="4" borderRadius="var(--cc-radius-md)" gap="4" align="center" border="1px solid var(--cc-line)">
             <input 
               type="checkbox"
               style={{ width: '24px', height: '24px', cursor: 'pointer', accentColor: 'var(--cc-gold)' }}
               checked={selectedLots[lot.id] || false}
-              onChange={(e) => handleLotSelect(lot.id, e.target.checked, lot.weightKg)}
+              onChange={(e) => handleLotSelect(lot.id, e.target.checked, lot.weightKg ?? 0)}
             />
             <Box flex="1">
               <LotCard lot={lot} detailHref={`/lots/${encodeURIComponent(lot.id)}`} />
@@ -119,6 +131,16 @@ export function CooperativeExportTab({ certifiedLots, refreshLots }: { certified
                 <option key={exp.id} value={exp.id}>{exp.name} ({exp.email})</option>
               ))}
             </select>
+          </Stack>
+
+          <Stack gap="2">
+            <Text fontSize="sm" fontWeight="600" color="var(--cc-cocoa)">Dossier DDR (optionnel)</Text>
+            <input
+              className="cc-input"
+              value={ddId}
+              onChange={(e) => setDdId(e.target.value)}
+              placeholder="ddr-uuid"
+            />
           </Stack>
 
           <Box p="4" bg="rgba(250,246,240,0.5)" borderRadius="var(--cc-radius-md)">

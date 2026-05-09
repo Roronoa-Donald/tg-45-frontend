@@ -49,6 +49,7 @@ export function LotCard({ lot, detailHref }: { lot: LotRecord; detailHref: strin
 
         <HStack gap="2" wrap="wrap" mt="1">
           <StatusPill value={String(lot.status)} />
+          {lot.eudrStatus ? <StatusPill value={String(lot.eudrStatus)} /> : null}
           {lot.blockchainConfirmed ? <StatusPill value="online" label="Ancré" /> : <StatusPill value="idle" label="Attente Blockchain" />}
         </HStack>
 

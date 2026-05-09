@@ -13,14 +13,31 @@ const NAV_BY_ROLE: Record<string, Array<{ to: string; label: string }>> = {
     { to: '/farmer/new', label: 'register_harvest' },
     { to: '/farmer/lots', label: 'my_lots' },
     { to: '/farmer/drafts', label: 'drafts' },
+    { to: '/parcels', label: 'Parcelles' },
   ],
   cooperative: [
     { to: '/cooperative', label: 'Travail coop' },
     { to: '/cooperative/lots', label: 'Lots à traiter' },
+    { to: '/cooperative/exports', label: 'Exports' },
+    { to: '/parcels', label: 'Parcelles' },
   ],
   verifier: [
     { to: '/verifier', label: 'Inspection' },
     { to: '/verifier/lots', label: 'Lots à vérifier' },
+  ],
+  exporter: [
+    { to: '/exporter', label: 'Exports entrants' },
+    { to: '/parcels', label: 'Parcelles' },
+  ],
+  compliance: [
+    { to: '/compliance', label: 'Conformité EUDR' },
+    { to: '/parcels', label: 'Parcelles' },
+  ],
+  admin: [
+    { to: '/admin', label: 'Administration' },
+  ],
+  ministry: [
+    { to: '/ministry', label: 'Ministère' },
   ],
 }
 

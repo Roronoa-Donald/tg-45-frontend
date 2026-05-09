@@ -21,6 +21,18 @@ export const seedUsers: Record<string, SessionUser> = {
     displayName: 'Paul Koffi',
     identifier: 'paul',
   },
+  exporter: {
+    id: 'user-exporter-001',
+    role: 'exporter',
+    displayName: 'TogoExport SARL',
+    identifier: 'export',
+  },
+  compliance: {
+    id: 'user-compliance-001',
+    role: 'compliance',
+    displayName: 'Equipe Conformité',
+    identifier: 'compliance',
+  },
 }
 
 export const seedLots: LotRecord[] = [
@@ -144,6 +156,8 @@ export const roleRoutes = {
   farmer: '/farmer',
   cooperative: '/cooperative',
   verifier: '/verifier',
+  exporter: '/exporter',
+  compliance: '/compliance',
   public: '/public/verify',
   login: '/login',
 }

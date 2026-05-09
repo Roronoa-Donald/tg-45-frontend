@@ -1,8 +1,23 @@
 import { Box, Button, Flex, Heading, Stack, Text } from '@chakra-ui/react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../../hooks/useAuth'
 import { useToast } from '../../context/ToastContext'
 import { loadIncomingExports, acceptExport, rejectExport } from '../../lib/api'
+import { StatusPill } from '../../components/StatusPill'
+
+type ExportLotItem = {
+  lot?: { weightKg?: number }
+}
+
+type ExportRecord = {
+  id: string
+  status?: string
+  cooperative?: { name?: string }
+  lots: ExportLotItem[]
+  eudrStatus?: string | null
+  createdAt?: string
+  updatedAt?: string
+}
 
 const getGpsLocation = (): Promise<{ lat: number; lng: number }> => {
   return new Promise((resolve, reject) => {
@@ -18,21 +33,21 @@ const getGpsLocation = (): Promise<{ lat: number; lng: number }> => {
 export function ExporterWorkspacePage() {
   const { token } = useAuth()
   const { showToast } = useToast()
-  const [exportsList, setExportsList] = useState<any[]>([])
+  const [exportsList, setExportsList] = useState<ExportRecord[]>([])
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [acquiringGps, setAcquiringGps] = useState(false)
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!token) return
     try {
       const data = await loadIncomingExports(token)
-      setExportsList(data)
+      setExportsList(data as ExportRecord[])
     } catch {
       showToast('Erreur lors du chargement des exportations', 'error')
     }
-  }
+  }, [showToast, token])
 
-  useEffect(() => { load() }, [token])
+  useEffect(() => { void load() }, [load])
 
   const handleAccept = async (exportId: string) => {
     if (!token) return
@@ -48,8 +63,9 @@ export function ExporterWorkspacePage() {
       await acceptExport(token, exportId, gps || undefined)
       showToast('Lots réceptionnés et acceptés avec succès !', 'success')
       load()
-    } catch (err: any) {
-      showToast(err?.message || "Erreur lors de l'acceptation", 'error')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Erreur lors de l'acceptation"
+      showToast(message, 'error')
     } finally {
       setLoadingId(null)
       setAcquiringGps(false)
@@ -65,8 +81,9 @@ export function ExporterWorkspacePage() {
       await rejectExport(token, exportId, "Refusé à la réception")
       showToast('Cargaison refusée.', 'info')
       load()
-    } catch (err: any) {
-      showToast(err?.message || 'Erreur lors du refus', 'error')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erreur lors du refus'
+      showToast(message, 'error')
     } finally {
       setLoadingId(null)
     }
@@ -97,15 +114,16 @@ export function ExporterWorkspacePage() {
         ) : null}
 
         {declaredExports.map(exp => {
-          const totalWeight = exp.lots.reduce((acc: number, curr: any) => acc + Number(curr.lot.weightKg), 0)
+          const totalWeight = exp.lots.reduce((acc, curr) => acc + Number(curr.lot?.weightKg ?? 0), 0)
           return (
             <Flex key={exp.id} className="cc-surface" p="6" borderRadius="var(--cc-radius-lg)" border="1px solid var(--cc-line)" direction="column" gap="4">
               <Flex justify="space-between" align="center" wrap="wrap" gap="4">
                 <Stack gap="1">
                   <Text fontSize="xs" fontWeight="700" color="var(--cc-gold)" textTransform="uppercase">Envoi #{exp.id.slice(0, 8)}</Text>
                   <Heading size="md" color="var(--cc-cocoa-deep)">{exp.cooperative?.name}</Heading>
-                  <Text fontSize="sm" color="var(--cc-cocoa)">Date d'envoi : {new Date(exp.createdAt).toLocaleDateString()}</Text>
+                  <Text fontSize="sm" color="var(--cc-cocoa)">Date d'envoi : {exp.createdAt ? new Date(exp.createdAt).toLocaleDateString() : '—'}</Text>
                 </Stack>
+                {exp.eudrStatus ? <StatusPill value={String(exp.eudrStatus)} /> : null}
                 
                 <Flex gap="8" bg="rgba(250,246,240,0.5)" p="4" borderRadius="var(--cc-radius-md)">
                   <Stack align="center" gap="0">
@@ -149,7 +167,7 @@ export function ExporterWorkspacePage() {
           {completedExports.map(exp => (
             <Flex key={exp.id} className="cc-surface" p="4" borderRadius="var(--cc-radius-md)" border="1px solid var(--cc-line)" opacity="0.7" justify="space-between" align="center">
               <Text fontSize="sm" fontWeight="600" color="var(--cc-cocoa)">{exp.cooperative?.name}</Text>
-              <Text fontSize="sm" color="var(--cc-olive)" fontWeight="bold">Accepé le {new Date(exp.updatedAt).toLocaleDateString()}</Text>
+              <Text fontSize="sm" color="var(--cc-olive)" fontWeight="bold">Accepé le {exp.updatedAt ? new Date(exp.updatedAt).toLocaleDateString() : '—'}</Text>
             </Flex>
           ))}
         </Stack>

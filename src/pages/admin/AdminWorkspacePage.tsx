@@ -6,6 +6,25 @@ import { StatusPill } from '../../components/StatusPill'
 import { Shield, Users, Activity, MapPin, Clock, User } from 'lucide-react'
 import { fetchLogs, createUser, listUsers } from '../../lib/api'
 
+type AuditLog = {
+  id: string
+  action?: string
+  actor?: { role?: string; name?: string; email?: string }
+  targetType?: string
+  details?: Record<string, unknown> | null
+  createdAt?: string
+}
+
+type AdminUser = {
+  id: string
+  name?: string
+  email?: string
+  phone?: string
+  role?: string
+  status?: string
+  createdAt?: string
+}
+
 // ─── Helper: format action labels ───
 function formatAction(action: string) {
   const labels: Record<string, string> = {
@@ -65,12 +84,12 @@ export function AdminWorkspacePage() {
   const { showToast } = useToast()
   
   // Logs state
-  const [logs, setLogs] = useState<any[]>([])
+  const [logs, setLogs] = useState<AuditLog[]>([])
   const [loadingLogs, setLoadingLogs] = useState(false)
   const [logFilters, setLogFilters] = useState({ date: '', search: '', role: '' })
 
   // Users state
-  const [users, setUsers] = useState<any[]>([])
+  const [users, setUsers] = useState<AdminUser[]>([])
   const [loadingUsers, setLoadingUsers] = useState(false)
 
   // User form state
@@ -82,7 +101,12 @@ export function AdminWorkspacePage() {
     setLoadingLogs(true)
     try {
       const data = await fetchLogs(token, logFilters)
-      setLogs(Array.isArray(data) ? data : (data as any).items || [])
+      const items = Array.isArray(data)
+        ? data
+        : Array.isArray(data.items)
+          ? data.items
+          : []
+      setLogs(items as AuditLog[])
     } catch {
       showToast('Erreur lors du chargement des logs.', 'error')
     } finally {
@@ -95,7 +119,8 @@ export function AdminWorkspacePage() {
     setLoadingUsers(true)
     try {
       const data = await listUsers(token)
-      setUsers(Array.isArray(data) ? data : [])
+      const items = Array.isArray(data) ? data : []
+      setUsers(items as AdminUser[])
     } catch {
       showToast('Erreur lors du chargement des utilisateurs.', 'error')
     } finally {
@@ -130,8 +155,9 @@ export function AdminWorkspacePage() {
   // Stats
   const totalUsers = users.length
   const totalLogs = logs.length
-  const roleBreakdown = users.reduce((acc: Record<string, number>, u: any) => {
-    acc[u.role] = (acc[u.role] || 0) + 1
+  const roleBreakdown = users.reduce((acc: Record<string, number>, userItem) => {
+    const role = userItem.role || 'unknown'
+    acc[role] = (acc[role] || 0) + 1
     return acc
   }, {})
 
@@ -233,7 +259,7 @@ export function AdminWorkspacePage() {
                         {/* Left: Action + Actor */}
                         <Stack gap="1" flex="1" minW="220px">
                           <Flex gap="2" align="center" wrap="wrap">
-                            <Text fontWeight="700" fontSize="sm" color="var(--cc-cocoa-deep)">{formatAction(log.action)}</Text>
+                            <Text fontWeight="700" fontSize="sm" color="var(--cc-cocoa-deep)">{log.action ? formatAction(log.action) : '—'}</Text>
                             {log.actor?.role && <RoleBadge role={log.actor.role} />}
                           </Flex>
                           <Flex gap="1" align="center">
@@ -249,14 +275,16 @@ export function AdminWorkspacePage() {
                           <Text fontSize="xs" color="var(--cc-cocoa)" opacity="0.6">
                             Cible: <strong>{log.targetType}</strong>
                           </Text>
-                          <MetaTags details={log.details} />
+                          <MetaTags details={log.details ?? null} />
                         </Stack>
 
                         {/* Right: Timestamp */}
                         <Flex align="center" gap="1" minW="160px" justify="flex-end">
                           <Clock size={12} color="var(--cc-cocoa)" opacity={0.5} />
                           <Text fontSize="sm" color="var(--cc-cocoa)" fontWeight="600">
-                            {new Date(log.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            {log.createdAt
+                              ? new Date(log.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                              : '—'}
                           </Text>
                         </Flex>
                       </Flex>
@@ -294,7 +322,7 @@ export function AdminWorkspacePage() {
                           </td>
                         </tr>
                       ) : (
-                        users.map((u: any) => (
+                        users.map((u) => (
                           <tr key={u.id}>
                             <td>
                               <Text fontWeight="600" color="var(--cc-cocoa-deep)">{u.name || '—'}</Text>
@@ -302,13 +330,15 @@ export function AdminWorkspacePage() {
                             <td>
                               <Text fontSize="sm" color="var(--cc-cocoa)">{u.email || u.phone || '—'}</Text>
                             </td>
-                            <td><RoleBadge role={u.role} /></td>
+                            <td><RoleBadge role={u.role ?? 'unknown'} /></td>
                             <td>
                               <StatusPill value={u.status === 'active' ? 'validated' : 'rejected'} label={u.status} />
                             </td>
                             <td>
                               <Text fontSize="sm" color="var(--cc-cocoa)" opacity="0.7">
-                                {new Date(u.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                {u.createdAt
+                                  ? new Date(u.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+                                  : '—'}
                               </Text>
                             </td>
                           </tr>

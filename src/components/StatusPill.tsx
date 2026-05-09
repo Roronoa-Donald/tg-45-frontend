@@ -18,15 +18,30 @@ const VARIANTS: Record<string, { bg: string; color: string; border: string; labe
   farmer: { bg: 'rgba(42, 110, 80, 0.1)', color: 'var(--cc-olive)', border: 'var(--cc-olive)', label: 'Agriculteur' },
   cooperative: { bg: 'rgba(196, 151, 58, 0.1)', color: 'var(--cc-gold)', border: 'var(--cc-gold)', label: 'Coopérative' },
   verifier: { bg: 'rgba(44, 24, 16, 0.1)', color: 'var(--cc-cocoa)', border: 'var(--cc-cocoa)', label: 'Vérificateur' },
+  exporter: { bg: 'rgba(196, 151, 58, 0.1)', color: 'var(--cc-gold)', border: 'var(--cc-gold)', label: 'Exportateur' },
+  compliance: { bg: 'rgba(42, 110, 80, 0.1)', color: 'var(--cc-olive)', border: 'var(--cc-olive)', label: 'Conformité' },
+  not_started: { bg: 'rgba(66, 84, 102, 0.1)', color: 'var(--cc-slate)', border: 'var(--cc-slate)', label: 'EUDR à initier' },
+  draft: { bg: 'rgba(196, 151, 58, 0.12)', color: 'var(--cc-gold)', border: 'var(--cc-gold)', label: 'EUDR brouillon' },
+  in_review: { bg: 'rgba(66, 84, 102, 0.1)', color: 'var(--cc-slate)', border: 'var(--cc-slate)', label: 'EUDR en revue' },
+  approved: { bg: 'rgba(39, 174, 96, 0.12)', color: 'var(--cc-success)', border: 'var(--cc-success)', label: 'EUDR approuvé' },
+  submitted: { bg: 'rgba(42, 110, 80, 0.15)', color: 'var(--cc-olive)', border: 'var(--cc-olive)', label: 'EUDR soumis' },
+  blocked: { bg: 'rgba(192, 57, 43, 0.12)', color: 'var(--cc-danger)', border: 'var(--cc-danger)', label: 'EUDR bloqué' },
 }
 
 export function StatusPill({ value, label }: { value: string; label?: string }) {
-  const parts = value?.split(';') || [value];
+  const parts = String(value || '').split(';').filter(Boolean)
+  const normalized = parts.length > 0 ? parts : [String(value)]
 
   return (
     <Flex gap="2" wrap="wrap" display="inline-flex">
-      {parts.map((part, index) => {
-        const variant = VARIANTS[part] ?? { bg: 'rgba(66, 84, 102, 0.1)', color: 'var(--cc-slate)', border: 'var(--cc-slate)', label: index === 0 && label ? label : part }
+      {normalized.map((part, index) => {
+        const variant = VARIANTS[part] ?? {
+          bg: 'rgba(66, 84, 102, 0.1)',
+          color: 'var(--cc-slate)',
+          border: 'var(--cc-slate)',
+          label: index === 0 && label ? label : part,
+        }
+
         return (
           <Box
             key={`${part}-${index}`}

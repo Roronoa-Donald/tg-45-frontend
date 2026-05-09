@@ -1,6 +1,19 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
-import { createLot, certifyLot, submitVerificationProof, transferLot, verifyLotStatus, uploadLotImage } from '../lib/api'
+import {
+  createLot,
+  certifyLot,
+  submitVerificationProof,
+  transferLot,
+  updateLotDetails,
+  verifyLotStatus,
+  uploadLotImage,
+  createParcel,
+  updateParcel,
+  linkLotParcel,
+  createDdr,
+  updateDdr,
+} from '../lib/api'
 import { deleteRecord, offlineStores, readAllRecords, writeRecord } from '../lib/idb'
 import { useAuth } from './AuthContext'
 import type { OfflineMutation, SyncMutationType } from '../domain/types'
@@ -70,6 +83,27 @@ async function runMutation(token: string, mutation: OfflineMutation, overrideIde
       return submitVerificationProof(token, String(mutation.payload.lotId || mutation.payload.id), mutation.payload)
     case 'certifyLot':
       return certifyLot(token, String(mutation.payload.lotId || mutation.payload.id), mutation.payload)
+    case 'updateLotDetails': {
+      const lotId = String(mutation.payload.lotId || mutation.payload.id)
+      const rawUpdates = (mutation.payload.updates && typeof mutation.payload.updates === 'object')
+        ? (mutation.payload.updates as Record<string, unknown>)
+        : (mutation.payload as Record<string, unknown>)
+      const cleanUpdates = { ...rawUpdates }
+      delete cleanUpdates.lotId
+      delete cleanUpdates.id
+      delete cleanUpdates.updates
+      return updateLotDetails(token, lotId, cleanUpdates)
+    }
+    case 'createParcel':
+      return createParcel(token, mutation.payload)
+    case 'updateParcel':
+      return updateParcel(token, String(mutation.payload.id), mutation.payload)
+    case 'linkLotParcel':
+      return linkLotParcel(token, String(mutation.payload.lotId), mutation.payload)
+    case 'createEudrDdr':
+      return createDdr(token, mutation.payload)
+    case 'updateEudrDdr':
+      return updateDdr(token, String(mutation.payload.id), mutation.payload)
     default:
       return null
   }

@@ -20,6 +20,7 @@ function normalizeUuid(value?: string | null) {
 
 function normalizeLot(lot: Record<string, unknown>): LotRecord {
   const gps = lot.gps as { lat?: number; lng?: number; precisionM?: number } | undefined
+  const parcels = Array.isArray(lot.parcels) ? (lot.parcels as LotRecord['parcels']) : []
 
   return {
     id: String(lot.id ?? lot.lotCode ?? `lot-${Date.now()}`),
@@ -29,12 +30,18 @@ function normalizeLot(lot: Record<string, unknown>): LotRecord {
     cooperativeId: (lot.cooperativeId as string | null | undefined) ?? null,
     product: String(lot.product ?? 'Cacao'),
     variety: (lot.variety as string | null | undefined) ?? null,
+    hsCode: (lot.hsCode as string | null | undefined) ?? null,
+    originCountry: (lot.originCountry as string | null | undefined) ?? null,
+    originRegion: (lot.originRegion as string | null | undefined) ?? null,
     weightKg: Number(lot.weightKg ?? 0),
     harvestDate: (lot.harvestDate as string | null | undefined) ?? null,
+    productionStartDate: (lot.productionStartDate as string | null | undefined) ?? null,
+    productionEndDate: (lot.productionEndDate as string | null | undefined) ?? null,
     gpsOriginLat: Number(lot.gpsOriginLat ?? gps?.lat ?? 0),
     gpsOriginLng: Number(lot.gpsOriginLng ?? gps?.lng ?? 0),
     gpsPrecisionM: Number(lot.gpsPrecisionM ?? gps?.precisionM ?? 0),
     status: String(lot.status ?? 'registered'),
+    eudrStatus: (lot.eudrStatus as string | null | undefined) ?? null,
     blockchainTxHash: (lot.blockchainTxHash as string | null | undefined) ?? (lot.proof as { txHash?: string | null } | undefined)?.txHash ?? null,
     blockchainProofHash: (lot.blockchainProofHash as string | null | undefined) ?? (lot.proof as { proofHash?: string | null } | undefined)?.proofHash ?? null,
     blockchainConfirmed: Boolean(lot.blockchainConfirmed ?? lot.blockchainTxHash),
@@ -43,6 +50,8 @@ function normalizeLot(lot: Record<string, unknown>): LotRecord {
     certification: (lot.certification as LotRecord['certification']) ?? null,
     events: Array.isArray(lot.events) ? (lot.events as LotRecord['events']) : [],
     images: Array.isArray(lot.images) ? (lot.images as LotRecord['images']) : [],
+    parcels,
+    eudrDueDiligence: (lot.eudrDueDiligence as LotRecord['eudrDueDiligence']) ?? null,
     proof: lot.proof as LotRecord['proof'] | undefined,
     verificationStatus: lot.verificationStatus as string | undefined,
     verificationNote: lot.verificationNote as string | undefined,
@@ -53,10 +62,12 @@ function normalizePublicLot(record: Record<string, unknown>): PublicLotRecord {
   return {
     lotCode: String(record.lotCode ?? ''),
     status: String(record.status ?? 'registered'),
+    eudrStatus: (record.eudrStatus as string | null | undefined) ?? null,
     gps: record.gps as PublicLotRecord['gps'],
     proof: record.proof as PublicLotRecord['proof'],
     events: Array.isArray(record.events) ? (record.events as PublicLotRecord['events']) : [],
     images: Array.isArray(record.images) ? (record.images as PublicLotRecord['images']) : [],
+    parcels: Array.isArray(record.parcels) ? (record.parcels as PublicLotRecord['parcels']) : [],
   }
 }
 
@@ -69,12 +80,18 @@ function buildOptimisticLot(draft: LotDraft, ownerId?: string, ownerName?: strin
     cooperativeId: cooperativeId ?? null,
     product: draft.product,
     variety: draft.variety,
+    hsCode: draft.hsCode,
+    originCountry: draft.originCountry,
+    originRegion: draft.originRegion,
     weightKg: draft.weightKg,
     harvestDate: draft.harvestDate,
+    productionStartDate: draft.productionStartDate,
+    productionEndDate: draft.productionEndDate,
     gpsOriginLat: draft.gpsOriginLat,
     gpsOriginLng: draft.gpsOriginLng,
     gpsPrecisionM: draft.gpsPrecisionM,
     status: 'pending',
+    eudrStatus: 'not_started',
     blockchainConfirmed: false,
     blockchainTxHash: null,
     blockchainProofHash: null,
@@ -134,6 +151,7 @@ export function useLots() {
       try {
         const lightweightDrafts = draftLots.map(draft => {
           const { photoDataUrl, ...rest } = draft
+          void photoDataUrl
           return rest
         })
         window.localStorage.setItem(DRAFT_LOTS_KEY, JSON.stringify(lightweightDrafts))
@@ -282,8 +300,14 @@ export function useLots() {
       const payload = {
         product: draft.product,
         variety: draft.variety,
+        hsCode: draft.hsCode,
+        originCountry: draft.originCountry,
+        originRegion: draft.originRegion,
         weightKg: draft.weightKg,
         harvestDate: new Date(draft.harvestDate).toISOString(),
+        productionStartDate: draft.productionStartDate || undefined,
+        productionEndDate: draft.productionEndDate || undefined,
+        parcelIds: draft.parcelIds,
         gpsOriginLat: draft.gpsOriginLat,
         gpsOriginLng: draft.gpsOriginLng,
         gpsPrecisionM: draft.gpsPrecisionM,

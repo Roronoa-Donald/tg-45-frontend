@@ -8,7 +8,7 @@ import { CooperativeExportTab } from './CooperativeExportTab'
 import { useLots } from '../../hooks/useLots'
 import { useSync } from '../../hooks/useSync'
 import { useToast } from '../../context/ToastContext'
-import type { Lot } from '../../types'
+import type { LotRecord } from '../../domain/types'
 
 const getGpsLocation = (): Promise<{ lat: number; lng: number }> => {
   return new Promise((resolve, reject) => {
@@ -33,16 +33,21 @@ export function CooperativeWorkspacePage() {
   const [isOpen, setIsOpen] = useState(false)
   const onOpen = () => setIsOpen(true)
   const onClose = () => setIsOpen(false)
-  const [transcriptionLot, setTranscriptionLot] = useState<Lot | null>(null)
+  const [transcriptionLot, setTranscriptionLot] = useState<LotRecord | null>(null)
   const [transcriptionWeight, setTranscriptionWeight] = useState<string>('')
 
-  const pendingWeighingLots = lots.filter((lot) => String(lot.status) === 'registered' && lot.weightKg === 0)
-  const registeredLots = lots.filter((lot) => String(lot.status) === 'registered' && (lot.weightKg || 0) > 0)
-  const validatedLots = lots.filter((lot) => String(lot.status) === 'validated' || String(lot.status) === 'pending')
-  const rejectedLots = lots.filter((lot) => String(lot.status) === 'rejected')
-  const certifiedLots = lots.filter((lot) => String(lot.status) === 'certified')
+  const transcriptionPrimaryImage = transcriptionLot?.images?.find((image) => image.isPrimary)?.url
+    || transcriptionLot?.images?.[0]?.url
+  const transcriptionScaleImage = transcriptionLot?.images?.[1]?.url
 
-  const openTranscription = (lot: Lot) => {
+  const baseStatus = (status: string) => status.split(';')[0]
+  const pendingWeighingLots = lots.filter((lot) => baseStatus(String(lot.status)) === 'registered' && lot.weightKg === 0)
+  const registeredLots = lots.filter((lot) => baseStatus(String(lot.status)) === 'registered' && (lot.weightKg || 0) > 0)
+  const validatedLots = lots.filter((lot) => ['validated', 'pending'].includes(baseStatus(String(lot.status))))
+  const rejectedLots = lots.filter((lot) => baseStatus(String(lot.status)) === 'rejected')
+  const certifiedLots = lots.filter((lot) => baseStatus(String(lot.status)) === 'certified')
+
+  const openTranscription = (lot: LotRecord) => {
     setTranscriptionLot(lot)
     setTranscriptionWeight('')
     onOpen()
@@ -209,7 +214,7 @@ export function CooperativeWorkspacePage() {
                     <Box key={lot.id} position="relative" transition="transform 0.2s" _hover={{ transform: 'translateY(-2px)' }}>
                       <LotCard lot={lot} detailHref={`/lots/${encodeURIComponent(lot.id)}`} />
                       <Flex mt="2" gap="2">
-                        <button className="cc-btn-gold" style={{ flex: 1, padding: '8px', fontSize: '13px' }} onClick={() => openTranscription(lot as any)}>
+                        <button className="cc-btn-gold" style={{ flex: 1, padding: '8px', fontSize: '13px' }} onClick={() => openTranscription(lot)}>
                           👁️ Voir et Saisir Poids
                         </button>
                       </Flex>
@@ -333,14 +338,14 @@ export function CooperativeWorkspacePage() {
           <DialogBody>
             {transcriptionLot && (
               <Stack gap={4}>
-                <Text fontWeight="bold">Lot {transcriptionLot.id} - {transcriptionLot.farmerName}</Text>
+                <Text fontWeight="bold">Lot {transcriptionLot.id} - {transcriptionLot.ownerName || transcriptionLot.ownerId || '—'}</Text>
                 
                 <Flex gap={4} direction={{ base: 'column', md: 'row' }}>
                   <Box flex="1">
                     <Text fontSize="sm" mb={2}>Photo du lot</Text>
-                    {transcriptionLot.imageUrl ? (
+                    {transcriptionPrimaryImage ? (
                       <Image 
-                        src={transcriptionLot.imageUrl} 
+                        src={transcriptionPrimaryImage} 
                         borderRadius="md" 
                         objectFit="cover" 
                         h="200px" 
@@ -354,9 +359,9 @@ export function CooperativeWorkspacePage() {
                   </Box>
                   <Box flex="1">
                     <Text fontSize="sm" mb={2}>Photo de la balance</Text>
-                    {transcriptionLot.scaleImageUrl ? (
+                    {transcriptionScaleImage ? (
                       <Image 
-                        src={transcriptionLot.scaleImageUrl} 
+                        src={transcriptionScaleImage} 
                         borderRadius="md" 
                         objectFit="cover" 
                         h="200px" 
@@ -379,7 +384,7 @@ export function CooperativeWorkspacePage() {
                     value={transcriptionWeight}
                     onChange={(e) => setTranscriptionWeight(e.target.value)}
                   />
-                  {!transcriptionLot.scaleImageUrl && (
+                  {!transcriptionScaleImage && (
                     <Text fontSize="sm" color="red.500" mt={2}>
                       Attention : Le paysan n'a pas fourni de photo de balance. Vous devez peser ce lot vous-même.
                     </Text>
