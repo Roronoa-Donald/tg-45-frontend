@@ -1,7 +1,7 @@
 import 'leaflet/dist/leaflet.css'
-import { Box, Button, Heading, Input, SimpleGrid, Stack, Text, Textarea } from '@chakra-ui/react'
+import { Box, Button, Flex, Heading, Input, SimpleGrid, Stack, Text, Textarea } from '@chakra-ui/react'
 import { useEffect, useMemo, useState } from 'react'
-import { MapContainer, Marker, Polygon, TileLayer, useMapEvents } from 'react-leaflet'
+import { MapContainer, Marker, Polygon, Polyline, TileLayer, useMapEvents } from 'react-leaflet'
 import { createParcel, listParcels, updateParcel } from '../lib/api'
 import { useAuth } from '../hooks/useAuth'
 import { StatusPill } from '../components/StatusPill'
@@ -26,6 +26,7 @@ export function ParcelsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [geoJsonText, setGeoJsonText] = useState('')
   const [saving, setSaving] = useState(false)
+  const [polygonPoints, setPolygonPoints] = useState<Array<{ lat: number; lng: number }>>([])
   const [form, setForm] = useState({
     name: '',
     countryCode: 'TG',
@@ -76,12 +77,55 @@ export function ParcelsPage() {
       lat: Array.isArray(selectedParcel.geometry?.coordinates) ? Number(selectedParcel.geometry?.coordinates?.[1] || DEFAULT_CENTER[0]) : DEFAULT_CENTER[0],
       lng: Array.isArray(selectedParcel.geometry?.coordinates) ? Number(selectedParcel.geometry?.coordinates?.[0] || DEFAULT_CENTER[1]) : DEFAULT_CENTER[1],
     })
-    setGeoJsonText(selectedParcel.geometryType === 'polygon' ? JSON.stringify(selectedParcel.geometry, null, 2) : '')
+    if (selectedParcel.geometryType === 'polygon') {
+      const coords = Array.isArray(selectedParcel.geometry?.coordinates)
+        ? (selectedParcel.geometry?.coordinates as unknown[])
+        : []
+      if (Array.isArray(coords[0])) {
+        const points = (coords[0] as unknown[])
+          .map((coord) => Array.isArray(coord) ? coord : [])
+          .filter((coord) => coord.length >= 2)
+          .map((coord) => ({ lat: Number(coord[1]), lng: Number(coord[0]) }))
+          .filter((point) => Number.isFinite(point.lat) && Number.isFinite(point.lng))
+        setPolygonPoints(points)
+      } else {
+        setPolygonPoints([])
+      }
+      setGeoJsonText(JSON.stringify(selectedParcel.geometry, null, 2))
+    } else {
+      setPolygonPoints([])
+      setGeoJsonText('')
+    }
   }, [selectedParcel])
+
+  useEffect(() => {
+    if (form.geometryType === 'point') {
+      setPolygonPoints([])
+    }
+  }, [form.geometryType])
+
+  const polygonGeometryFromPoints = useMemo(() => {
+    if (polygonPoints.length < 3) {
+      return null
+    }
+
+    const coordinates = polygonPoints.map((point) => [point.lng, point.lat])
+    const [firstLng, firstLat] = coordinates[0]
+    const [lastLng, lastLat] = coordinates[coordinates.length - 1]
+    if (firstLng !== lastLng || firstLat !== lastLat) {
+      coordinates.push([firstLng, firstLat])
+    }
+
+    return { type: 'Polygon', coordinates: [coordinates] }
+  }, [polygonPoints])
 
   const geometryPreview = useMemo(() => {
     if (form.geometryType === 'point') {
       return { type: 'Point', coordinates: [form.lng, form.lat] }
+    }
+
+    if (polygonGeometryFromPoints) {
+      return polygonGeometryFromPoints
     }
 
     if (!geoJsonText.trim()) {
@@ -93,7 +137,64 @@ export function ParcelsPage() {
     } catch {
       return null
     }
-  }, [form.geometryType, form.lat, form.lng, geoJsonText])
+  }, [form.geometryType, form.lat, form.lng, geoJsonText, polygonGeometryFromPoints])
+
+  useEffect(() => {
+    if (form.geometryType !== 'polygon') {
+      return
+    }
+
+    if (polygonPoints.length === 0) {
+      return
+    }
+
+    const coordinates = polygonPoints.map((point) => [point.lng, point.lat])
+    const [firstLng, firstLat] = coordinates[0]
+    const [lastLng, lastLat] = coordinates[coordinates.length - 1]
+    if (firstLng !== lastLng || firstLat !== lastLat) {
+      coordinates.push([firstLng, firstLat])
+    }
+
+    setGeoJsonText(JSON.stringify({ type: 'Polygon', coordinates: [coordinates] }, null, 2))
+  }, [form.geometryType, polygonPoints])
+
+  const polygonLatLngs = useMemo(() => {
+    if (form.geometryType !== 'polygon') {
+      return [] as Array<[number, number]>
+    }
+
+    if (polygonPoints.length > 0) {
+      return polygonPoints.map((point) => [point.lat, point.lng] as [number, number])
+    }
+
+    if (geometryPreview?.type === 'Polygon' && Array.isArray(geometryPreview.coordinates)) {
+      const coords = geometryPreview.coordinates[0]
+      if (Array.isArray(coords)) {
+        return coords
+          .filter((coord) => Array.isArray(coord) && coord.length >= 2)
+          .map((coord) => [Number(coord[1]), Number(coord[0])] as [number, number])
+      }
+    }
+
+    return [] as Array<[number, number]>
+  }, [form.geometryType, polygonPoints, geometryPreview])
+
+  const handleMapSelect = (lat: number, lng: number) => {
+    if (form.geometryType === 'point') {
+      setForm((current) => ({ ...current, lat, lng }))
+      return
+    }
+
+    setPolygonPoints((current) => [...current, { lat, lng }])
+  }
+
+  const handleUndoPolygon = () => {
+    setPolygonPoints((current) => current.slice(0, -1))
+  }
+
+  const handleClearPolygon = () => {
+    setPolygonPoints([])
+  }
 
   const handleSave = async () => {
     if (!token) {
@@ -188,9 +289,28 @@ export function ParcelsPage() {
           </SimpleGrid>
 
           {form.geometryType === 'polygon' ? (
-            <Stack gap="1">
-              <Text fontWeight="600" color="var(--cc-cocoa)">GeoJSON (Polygon)</Text>
-              <Textarea value={geoJsonText} onChange={(event) => setGeoJsonText(event.target.value)} minH="140px" placeholder='{"type":"Polygon","coordinates":[[[lng,lat],...]]}' />
+            <Stack gap="3">
+              <Stack gap="1">
+                <Text fontWeight="600" color="var(--cc-cocoa)">Mode polygone</Text>
+                <Text fontSize="sm" color="var(--cc-cocoa)" opacity="0.7">1) Cliquez sur la carte pour poser le point 1. 2) Ajoutez 3 points minimum. 3) Enregistrez.</Text>
+                <Text fontSize="sm" color="var(--cc-cocoa)">Points: {polygonPoints.length}</Text>
+                {polygonPoints.length > 0 ? (
+                  <Text fontSize="sm" color="var(--cc-cocoa)" opacity="0.7">Dernier point: {polygonPoints[polygonPoints.length - 1].lat.toFixed(4)}, {polygonPoints[polygonPoints.length - 1].lng.toFixed(4)}</Text>
+                ) : null}
+                <Flex gap="2" wrap="wrap">
+                  <button className="cc-btn-outline" onClick={handleUndoPolygon} disabled={polygonPoints.length === 0}>
+                    Retirer dernier
+                  </button>
+                  <button className="cc-btn-outline" onClick={handleClearPolygon} disabled={polygonPoints.length === 0}>
+                    Effacer
+                  </button>
+                </Flex>
+              </Stack>
+              <Stack gap="1">
+                <Text fontWeight="600" color="var(--cc-cocoa)">GeoJSON (Polygon)</Text>
+                <Textarea value={geoJsonText} onChange={(event) => setGeoJsonText(event.target.value)} minH="140px" placeholder='{"type":"Polygon","coordinates":[[[lng,lat],...]]}' />
+                <Text fontSize="xs" color="var(--cc-cocoa)" opacity="0.6">Le GeoJSON se met a jour automatiquement si vous cliquez sur la carte.</Text>
+              </Stack>
             </Stack>
           ) : (
             <Stack gap="1">
@@ -212,10 +332,18 @@ export function ParcelsPage() {
                 attribution='&copy; OpenStreetMap contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
-              <MapClickHandler onSelect={(lat, lng) => setForm((current) => ({ ...current, lat, lng }))} />
+              <MapClickHandler onSelect={handleMapSelect} />
               {geometryPreview?.type === 'Point' ? <Marker position={[form.lat, form.lng]} /> : null}
-              {geometryPreview?.type === 'Polygon' && Array.isArray(geometryPreview.coordinates) ? (
-                <Polygon positions={geometryPreview.coordinates[0].map((coord: number[]) => [coord[1], coord[0]])} />
+              {form.geometryType === 'polygon' && polygonLatLngs.length > 0 ? (
+                polygonLatLngs.map((coord, index) => (
+                  <Marker key={`polygon-point-${index}`} position={coord} />
+                ))
+              ) : null}
+              {form.geometryType === 'polygon' && polygonLatLngs.length >= 2 ? (
+                <Polyline positions={polygonLatLngs} pathOptions={{ color: '#2F855A', weight: 2, dashArray: '6 6' }} />
+              ) : null}
+              {form.geometryType === 'polygon' && polygonLatLngs.length >= 3 ? (
+                <Polygon positions={polygonLatLngs} pathOptions={{ color: '#2F855A', fillColor: 'rgba(47, 133, 90, 0.2)' }} />
               ) : null}
             </MapContainer>
           </Box>

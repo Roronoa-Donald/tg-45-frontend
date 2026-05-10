@@ -291,6 +291,14 @@ export function useLots() {
     async (draft: LotDraft) => {
       console.log('[useLots] submitDraft called', { draftId: draft.id, title: draft.title })
 
+      const toIsoDate = (value?: string) => {
+        if (!value) {
+          return undefined
+        }
+        const date = new Date(value)
+        return Number.isNaN(date.getTime()) ? undefined : date.toISOString()
+      }
+
       const optimisticLot = buildOptimisticLot(draft, user?.id, user?.displayName, normalizeUuid(user?.cooperativeId) ?? null)
       setLots((current) => {
         const withoutCurrent = current.filter((lot) => lot.id !== optimisticLot.id && lot.lotCode !== optimisticLot.lotCode)
@@ -304,9 +312,9 @@ export function useLots() {
         originCountry: draft.originCountry,
         originRegion: draft.originRegion,
         weightKg: draft.weightKg,
-        harvestDate: new Date(draft.harvestDate).toISOString(),
-        productionStartDate: draft.productionStartDate || undefined,
-        productionEndDate: draft.productionEndDate || undefined,
+        harvestDate: toIsoDate(draft.harvestDate),
+        productionStartDate: toIsoDate(draft.productionStartDate),
+        productionEndDate: toIsoDate(draft.productionEndDate),
         parcelIds: draft.parcelIds,
         gpsOriginLat: draft.gpsOriginLat,
         gpsOriginLng: draft.gpsOriginLng,
