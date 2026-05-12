@@ -2,7 +2,10 @@ import { Box, Flex, Heading, SimpleGrid, Stack, Text } from '@chakra-ui/react'
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CameraCapture } from '../../components/CameraCapture'
+import { useAuth } from '../../hooks/useAuth'
 import { useLots } from '../../hooks/useLots'
+import { listParcels } from '../../lib/api'
+import type { ParcelRecord } from '../../domain/types'
 
 import { useToast } from '../../context/ToastContext'
 import { MapPin, Navigation, Camera, FileText } from 'lucide-react'
@@ -162,6 +165,7 @@ function GpsCalibrationWidget({
 export function FarmerCapturePage() {
   const navigate = useNavigate()
   const { showToast } = useToast()
+  const { token } = useAuth()
   const { submitDraft, saveDraft } = useLots()
 
   const [step, setStep] = useState(1)
@@ -177,10 +181,13 @@ export function FarmerCapturePage() {
     originRegion: '',
     productionStartDate: '',
     productionEndDate: '',
-    parcelIdsText: '',
+    parcelIds: [] as string[],
   })
   const [submitting, setSubmitting] = useState(false)
   const [watchId, setWatchId] = useState<number | null>(null)
+  const [parcels, setParcels] = useState<ParcelRecord[]>([])
+  const [parcelsLoading, setParcelsLoading] = useState(false)
+  const [selectedParcelId, setSelectedParcelId] = useState('')
 
   const stopWatching = useCallback(() => {
     if (watchId !== null) {
@@ -238,6 +245,28 @@ export function FarmerCapturePage() {
     requestGps()
   }, [requestGps])
 
+  useEffect(() => {
+    if (!token) {
+      setParcels([])
+      return
+    }
+
+    const loadParcels = async () => {
+      setParcelsLoading(true)
+      try {
+        const response = await listParcels(token)
+        setParcels(response as unknown as ParcelRecord[])
+      } catch (err) {
+        showToast('Impossible de charger les parcelles.', 'warning')
+        setParcels([])
+      } finally {
+        setParcelsLoading(false)
+      }
+    }
+
+    void loadParcels()
+  }, [token, showToast])
+
   // Cleanup watch on unmount
   useEffect(() => {
     return () => {
@@ -280,9 +309,7 @@ export function FarmerCapturePage() {
     try {
       const draftId = `draft-${Date.now()}`
       const idempotencyKey = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`
-      const parcelIds = form.parcelIdsText
-        ? form.parcelIdsText.split(',').map((value) => value.trim()).filter(Boolean)
-        : undefined
+      const parcelIds = form.parcelIds.length > 0 ? form.parcelIds : undefined
 
       const draft = {
         id: draftId,
@@ -447,8 +474,89 @@ export function FarmerCapturePage() {
                     <input className="cc-input" type="date" value={form.productionEndDate} onChange={(e) => setForm((c) => ({ ...c, productionEndDate: e.target.value }))} />
                   </Stack>
                   <Stack gap="1">
-                    <Text fontSize="sm" fontWeight="600" color="var(--cc-cocoa)">Parcelles (IDs)</Text>
-                    <input className="cc-input" value={form.parcelIdsText} onChange={(e) => setForm((c) => ({ ...c, parcelIdsText: e.target.value }))} placeholder="parcel-uuid-1, parcel-uuid-2" />
+                    <Text fontSize="sm" fontWeight="600" color="var(--cc-cocoa)">Parcelles</Text>
+                    <Flex gap="2" wrap="wrap">
+                      <select
+                        className="cc-input"
+                        value={selectedParcelId}
+                        onChange={(e) => setSelectedParcelId(e.target.value)}
+                        disabled={parcelsLoading || parcels.length === 0}
+                      >
+                        <option value="">
+                          {parcelsLoading
+                            ? 'Chargement des parcelles...'
+                            : parcels.length === 0
+                              ? 'Aucune parcelle disponible'
+                              : 'Choisir une parcelle'}
+                        </option>
+                        {parcels.map((parcel) => (
+                          <option key={parcel.id} value={parcel.id}>
+                            {parcel.name || parcel.id}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        className="cc-btn-outline"
+                        onClick={() => {
+                          if (!selectedParcelId || form.parcelIds.includes(selectedParcelId)) {
+                            return
+                          }
+                          setForm((current) => ({
+                            ...current,
+                            parcelIds: [...current.parcelIds, selectedParcelId],
+                          }))
+                          setSelectedParcelId('')
+                        }}
+                        disabled={!selectedParcelId || form.parcelIds.includes(selectedParcelId)}
+                        style={{ padding: '8px 14px', fontSize: '12px' }}
+                      >
+                        Ajouter
+                      </button>
+                    </Flex>
+                    {form.parcelIds.length > 0 && (
+                      <Flex gap="2" wrap="wrap">
+                        {form.parcelIds.map((parcelId) => {
+                          const parcel = parcels.find((item) => item.id === parcelId)
+                          return (
+                            <Flex
+                              key={parcelId}
+                              align="center"
+                              gap="2"
+                              px="3"
+                              py="1"
+                              borderRadius="full"
+                              border="1px solid var(--cc-line)"
+                              bg="white"
+                            >
+                              <Text fontSize="xs" fontWeight="600" color="var(--cc-cocoa)">
+                                {parcel?.name || parcelId}
+                              </Text>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setForm((current) => ({
+                                    ...current,
+                                    parcelIds: current.parcelIds.filter((id) => id !== parcelId),
+                                  }))
+                                }
+                                style={{
+                                  borderRadius: '999px',
+                                  border: '1px solid var(--cc-line)',
+                                  width: '20px',
+                                  height: '20px',
+                                  fontSize: '12px',
+                                  lineHeight: '18px',
+                                }}
+                                aria-label="Retirer la parcelle"
+                              >
+                                ×
+                              </button>
+                            </Flex>
+                          )
+                        })}
+                      </Flex>
+                    )}
                   </Stack>
                 </SimpleGrid>
               </Stack>
