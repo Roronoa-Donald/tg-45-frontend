@@ -455,3 +455,113 @@ export async function sendJoinRequest(token: string, cooperativeId: string) {
     headers: authHeaders(token),
   })
 }
+
+// ─── PARCEL VALIDATION (Terrain) ───
+
+export async function getPendingParcels(token: string, query: Record<string, string | number | undefined> = {}) {
+  const search = new URLSearchParams()
+  for (const [key, value] of Object.entries(query)) {
+    if (value !== undefined && value !== '') {
+      search.set(key, String(value))
+    }
+  }
+  search.set('_t', Date.now().toString())
+  return request<{ items: Record<string, unknown>[]; meta?: Record<string, unknown> }>(`/parcels/validation/pending?${search.toString()}`, {
+    headers: authHeaders(token),
+  })
+}
+
+export async function addParcelValidationPhoto(
+  token: string,
+  validationId: string,
+  payload: { url: string; gpsLat: number; gpsLng: number; takenAt?: string }
+) {
+  return request<Record<string, unknown>>(`/parcels/validation/${validationId}/photos`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function validateParcel(
+  token: string,
+  validationId: string,
+  payload: { approve: boolean; reason?: string }
+) {
+  return request<Record<string, unknown>>(`/parcels/validation/${validationId}/validate`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function getParcelValidationHistory(token: string, parcelId: string) {
+  return request<Record<string, unknown>[]>(`/parcels/validation/${parcelId}/history?_t=${Date.now()}`, {
+    headers: authHeaders(token),
+  })
+}
+
+// ─── LOT VERIFICATION (Vote 51%) ───
+
+export async function getPendingVerificationLots(token: string, query: Record<string, string | number | undefined> = {}) {
+  const search = new URLSearchParams()
+  for (const [key, value] of Object.entries(query)) {
+    if (value !== undefined && value !== '') {
+      search.set(key, String(value))
+    }
+  }
+  search.set('_t', Date.now().toString())
+  return request<{ items: Record<string, unknown>[]; meta?: Record<string, unknown> }>(`/lots/verification/pending?${search.toString()}`, {
+    headers: authHeaders(token),
+  })
+}
+
+export async function getAutoValidatedLots(token: string, query: Record<string, string | number | undefined> = {}) {
+  const search = new URLSearchParams()
+  for (const [key, value] of Object.entries(query)) {
+    if (value !== undefined && value !== '') {
+      search.set(key, String(value))
+    }
+  }
+  search.set('_t', Date.now().toString())
+  return request<{ items: Record<string, unknown>[]; meta?: Record<string, unknown> }>(`/lots/verification/auto-validated?${search.toString()}`, {
+    headers: authHeaders(token),
+  })
+}
+
+export async function getSpotCheckLots(token: string, query: Record<string, string | number | undefined> = {}) {
+  const search = new URLSearchParams()
+  for (const [key, value] of Object.entries(query)) {
+    if (value !== undefined && value !== '') {
+      search.set(key, String(value))
+    }
+  }
+  search.set('_t', Date.now().toString())
+  return request<{ items: Record<string, unknown>[]; meta?: Record<string, unknown> }>(`/lots/verification/spot-check?${search.toString()}`, {
+    headers: authHeaders(token),
+  })
+}
+
+export async function voteLot(
+  token: string,
+  lotId: string,
+  payload: { vote: 'approve' | 'reject'; reason?: string }
+) {
+  return request<Record<string, unknown>>(`/lots/verification/${lotId}/vote`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function contestLot(
+  token: string,
+  lotId: string,
+  payload: { reason: string }
+) {
+  return request<Record<string, unknown>>(`/lots/verification/${lotId}/contest`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(payload),
+  })
+}
