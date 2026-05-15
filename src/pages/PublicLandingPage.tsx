@@ -37,9 +37,21 @@ const features = [
 ]
 
 const demoAccounts = [
-  { role: 'Agriculteur', id: 'farmer.com', pin: '1234', color: 'var(--cc-olive)' },
-  { role: 'Coopérative', id: 'coop@example.test', pin: '1234', color: 'var(--cc-gold)' },
-  { role: 'Vérificateur', id: 'verifier@example.test', pin: '1234', color: 'var(--cc-cocoa)' },
+  { role: 'Admin', id: 'admin.com', secret: 'admin', color: 'var(--cc-cocoa-deep)' },
+  { role: 'Agriculteur', id: 'farmer.com', secret: '1234', color: 'var(--cc-olive)' },
+  { role: 'Coopérative', id: 'coop.com', secret: '1234', color: 'var(--cc-gold)' },
+  { role: 'Exportateur', id: 'exporter.com', secret: '1234', color: 'var(--cc-amber)' },
+  { role: 'Conformité', id: 'compliance.com', secret: '1234', color: 'var(--cc-slate-500)' },
+  { role: 'Ministère', id: 'ministry.com', secret: '1234', color: 'var(--cc-cocoa)' },
+]
+
+const verifierAccounts = [
+  { id: 'verifier.com', secret: '1234' },
+  { id: 'verifier1.com', secret: '1234' },
+  { id: 'verifier2.com', secret: '1234' },
+  { id: 'verifier3.com', secret: '1234' },
+  { id: 'verifier4.com', secret: '1234' },
+  { id: 'verifier5.com', secret: '1234' },
 ]
 
 export function PublicLandingPage() {
@@ -125,24 +137,52 @@ export function PublicLandingPage() {
               <Heading size="xl" color="var(--cc-cocoa-deep)">Tester la plateforme</Heading>
               <Text color="var(--cc-cocoa)" opacity="0.7">Utilisez ces comptes de démonstration pour explorer chaque rôle.</Text>
             </Stack>
-            <SimpleGrid columns={{ base: 1, md: 3 }} gap="5" w="full" maxW="4xl">
-              {demoAccounts.map((acc) => (
-                <Box key={acc.role} className="cc-surface" borderRadius="var(--cc-radius-lg)" p="6" borderTop="3px solid" borderTopColor={acc.color} transition="all 0.3s var(--cc-transition)" _hover={{ transform: 'translateY(-3px)' }}>
-                  <Stack gap="3">
-                    <Heading size="md" color="var(--cc-cocoa-deep)" fontFamily="'Playfair Display', serif">{acc.role}</Heading>
-                    <Box>
-                      <Text fontSize="sm" color="var(--cc-cocoa)" opacity="0.6">Identifiant</Text>
-                      <Text fontWeight="600" fontFamily="monospace" fontSize="sm">{acc.id}</Text>
-                    </Box>
-                    <Box>
-                      <Text fontSize="sm" color="var(--cc-cocoa)" opacity="0.6">PIN</Text>
-                      <Text fontWeight="600" fontFamily="monospace" fontSize="sm">{acc.pin}</Text>
-                    </Box>
-                    <button className="cc-btn-outline" onClick={() => navigate('/login')} style={{ padding: '10px 20px', fontSize: '13px', marginTop: '4px' }}>Se connecter →</button>
-                  </Stack>
-                </Box>
-              ))}
-            </SimpleGrid>
+
+            {/* Rôles principaux */}
+            <Stack gap="4" w="full">
+              <Text fontSize="sm" fontWeight="600" color="var(--cc-cocoa)" textTransform="uppercase" letterSpacing="0.05em">Rôles principaux</Text>
+              <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap="5" w="full">
+                {demoAccounts.map((acc) => (
+                  <Box key={acc.role} className="cc-surface" borderRadius="var(--cc-radius-lg)" p="6" borderTop="3px solid" borderTopColor={acc.color} transition="all 0.3s var(--cc-transition)" _hover={{ transform: 'translateY(-3px)' }}>
+                    <Stack gap="3">
+                      <Heading size="md" color="var(--cc-cocoa-deep)" fontFamily="'Playfair Display', serif">{acc.role}</Heading>
+                      <Box>
+                        <Text fontSize="xs" color="var(--cc-cocoa)" opacity="0.6">Identifiant</Text>
+                        <Text fontWeight="600" fontFamily="monospace" fontSize="sm">{acc.id}</Text>
+                      </Box>
+                      <Box>
+                        <Text fontSize="xs" color="var(--cc-cocoa)" opacity="0.6">Mot de passe</Text>
+                        <Text fontWeight="600" fontFamily="monospace" fontSize="sm">{acc.secret}</Text>
+                      </Box>
+                      <button className="cc-btn-outline" onClick={() => navigate('/login')} style={{ padding: '10px 20px', fontSize: '13px', marginTop: '4px' }}>Se connecter →</button>
+                    </Stack>
+                  </Box>
+                ))}
+              </SimpleGrid>
+            </Stack>
+
+            {/* Vérificateurs */}
+            <Stack gap="4" w="full">
+              <Text fontSize="sm" fontWeight="600" color="var(--cc-cocoa)" textTransform="uppercase" letterSpacing="0.05em">Vérificateurs (6 comptes)</Text>
+              <SimpleGrid columns={{ base: 2, sm: 3, md: 4, lg: 6 }} gap="3" w="full">
+                {verifierAccounts.map((acc) => (
+                  <Box key={acc.id} className="cc-surface" borderRadius="var(--cc-radius-md)" p="4" borderTop="2px solid var(--cc-cocoa)" transition="all 0.3s var(--cc-transition)" _hover={{ transform: 'translateY(-2px)' }}>
+                    <Stack gap="2">
+                      <Text fontSize="xs" fontWeight="600" color="var(--cc-cocoa-deep)">Vérificateur</Text>
+                      <Box>
+                        <Text fontSize="xs" color="var(--cc-cocoa)" opacity="0.6">ID</Text>
+                        <Text fontWeight="600" fontFamily="monospace" fontSize="xs">{acc.id}</Text>
+                      </Box>
+                      <Box>
+                        <Text fontSize="xs" color="var(--cc-cocoa)" opacity="0.6">MDP</Text>
+                        <Text fontWeight="600" fontFamily="monospace" fontSize="xs">{acc.secret}</Text>
+                      </Box>
+                      <button className="cc-btn-outline" onClick={() => navigate('/login')} style={{ padding: '6px 12px', fontSize: '11px', marginTop: '2px' }}>Connecter</button>
+                    </Stack>
+                  </Box>
+                ))}
+              </SimpleGrid>
+            </Stack>
           </Stack>
         </Container>
       </Box>
