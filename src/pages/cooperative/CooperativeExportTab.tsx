@@ -2,7 +2,7 @@ import { Box, Button, Flex, Heading, Stack, Text } from '@chakra-ui/react'
 import { useEffect, useState } from 'react'
 import { useAuth } from '../../hooks/useAuth'
 import { useToast } from '../../context/ToastContext'
-import { loadActiveExporters, exportLots } from '../../lib/api'
+import { loadActiveExporters, exportLots, listDueDiligence } from '../../lib/api'
 import { LotCard } from '../../components/LotCard'
 import type { LotRecord } from '../../domain/types'
 
@@ -12,10 +12,18 @@ type ExporterRecord = {
   email?: string
 }
 
+type DdrRecord = {
+  id: string
+  status: string
+  createdAt: string
+  lot?: { id: string; lotCode?: string }
+}
+
 export function CooperativeExportTab({ certifiedLots, refreshLots }: { certifiedLots: LotRecord[]; refreshLots: () => void }) {
   const { token, user } = useAuth()
   const { showToast } = useToast()
   const [exporters, setExporters] = useState<ExporterRecord[]>([])
+  const [ddrs, setDdrs] = useState<DdrRecord[]>([])
   const [selectedExporterId, setSelectedExporterId] = useState('')
   const [selectedLots, setSelectedLots] = useState<Record<string, boolean>>({})
   const [lotWeights, setLotWeights] = useState<Record<string, number>>({})
@@ -27,7 +35,13 @@ export function CooperativeExportTab({ certifiedLots, refreshLots }: { certified
     loadActiveExporters(token)
       .then((data) => setExporters(data as ExporterRecord[]))
       .catch(() => showToast('Erreur lors du chargement des exportateurs', 'error'))
-  }, [token, showToast])
+
+    if (user?.cooperativeId) {
+      listDueDiligence(token, { cooperativeId: user.cooperativeId, status: 'approved' })
+        .then((response) => setDdrs((response.items || []) as DdrRecord[]))
+        .catch(() => showToast('Erreur lors du chargement des DDR', 'error'))
+    }
+  }, [token, user?.cooperativeId, showToast])
 
   const handleLotSelect = (lotId: string, isSelected: boolean, defaultWeight: number) => {
     setSelectedLots(prev => ({ ...prev, [lotId]: isSelected }))
@@ -135,12 +149,18 @@ export function CooperativeExportTab({ certifiedLots, refreshLots }: { certified
 
           <Stack gap="2">
             <Text fontSize="sm" fontWeight="600" color="var(--cc-cocoa)">Dossier DDR (optionnel)</Text>
-            <input
+            <select
               className="cc-input"
               value={ddId}
               onChange={(e) => setDdId(e.target.value)}
-              placeholder="ddr-uuid"
-            />
+            >
+              <option value="">-- Aucun dossier DDR --</option>
+              {ddrs.map(ddr => (
+                <option key={ddr.id} value={ddr.id}>
+                  DDR-{new Date(ddr.createdAt).toLocaleDateString('fr-FR')} - {ddr.status} - {ddr.lot?.lotCode || ddr.lot?.id || 'Sans lot'}
+                </option>
+              ))}
+            </select>
           </Stack>
 
           <Box p="4" bg="rgba(250,246,240,0.5)" borderRadius="var(--cc-radius-md)">

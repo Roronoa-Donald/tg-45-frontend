@@ -1,5 +1,5 @@
 import { Box, Flex, Heading, Stack, Text, Tabs, Image, Input, Button, DialogRoot, DialogContent, DialogHeader, DialogBody, DialogFooter, DialogBackdrop, DialogCloseTrigger } from '@chakra-ui/react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { LotCard } from '../../components/LotCard'
 import { StatusPill } from '../../components/StatusPill'
 import { CooperativeFarmersTab } from './CooperativeFarmersTab'
@@ -8,7 +8,15 @@ import { CooperativeExportTab } from './CooperativeExportTab'
 import { useLots } from '../../hooks/useLots'
 import { useSync } from '../../hooks/useSync'
 import { useToast } from '../../context/ToastContext'
+import { useAuth } from '../../hooks/useAuth'
+import { loadActiveExporters } from '../../lib/api'
 import type { LotRecord } from '../../domain/types'
+
+type ExporterRecord = {
+  id: string
+  name?: string
+  email?: string
+}
 
 const getGpsLocation = (): Promise<{ lat: number; lng: number }> => {
   return new Promise((resolve, reject) => {
@@ -25,7 +33,9 @@ export function CooperativeWorkspacePage() {
   const { lots, refreshLots, updateLotOptimistically } = useLots()
   const { enqueueMutation } = useSync()
   const { showToast } = useToast()
+  const { token } = useAuth()
   const [transferTarget, setTransferTarget] = useState('')
+  const [exporters, setExporters] = useState<ExporterRecord[]>([])
   const [loadingLotId, setLoadingLotId] = useState<string | null>(null)
   const [acquiringGps, setAcquiringGps] = useState(false)
   
@@ -39,6 +49,13 @@ export function CooperativeWorkspacePage() {
   const transcriptionPrimaryImage = transcriptionLot?.images?.find((image) => image.isPrimary)?.url
     || transcriptionLot?.images?.[0]?.url
   const transcriptionScaleImage = transcriptionLot?.images?.[1]?.url
+
+  useEffect(() => {
+    if (!token) return
+    loadActiveExporters(token)
+      .then((data) => setExporters(data as ExporterRecord[]))
+      .catch(() => showToast('Erreur lors du chargement des exportateurs', 'error'))
+  }, [token, showToast])
 
   const baseStatus = (status: string) => status.split(';')[0]
   const pendingWeighingLots = lots.filter((lot) => baseStatus(String(lot.status)) === 'registered' && lot.weightKg === 0)
@@ -174,13 +191,17 @@ export function CooperativeWorkspacePage() {
         </Stack>
         <Flex gap="3" align="center">
           {acquiringGps && <span className="cc-gps-spinner">Acquisition satellite…</span>}
-          <input 
-            className="cc-input" 
-            placeholder="ID du destinataire" 
-            value={transferTarget} 
-            onChange={(event) => setTransferTarget(event.target.value)} 
-            style={{ width: '220px', background: 'transparent' }}
-          />
+          <select
+            className="cc-input"
+            value={transferTarget}
+            onChange={(event) => setTransferTarget(event.target.value)}
+            style={{ width: '280px', background: 'transparent' }}
+          >
+            <option value="">-- Choisir un exportateur --</option>
+            {exporters.map(exp => (
+              <option key={exp.id} value={exp.id}>{exp.name} ({exp.email})</option>
+            ))}
+          </select>
         </Flex>
       </Flex>
 

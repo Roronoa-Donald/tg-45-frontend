@@ -1,5 +1,5 @@
 import { Box, Button, Heading, Input, SimpleGrid, Stack, Text } from '@chakra-ui/react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   addDdrDocument,
   approveDdr,
@@ -10,12 +10,13 @@ import {
   getDdr,
   submitDeclaration,
   updateDdr,
+  listParcels,
 } from '../../lib/api'
 import { useAuth } from '../../hooks/useAuth'
 import { useLots } from '../../hooks/useLots'
 import { useToast } from '../../context/ToastContext'
 import { StatusPill } from '../../components/StatusPill'
-import type { EudrDueDiligence } from '../../domain/types'
+import type { EudrDueDiligence, ParcelRecord } from '../../domain/types'
 
 const toIsoDateTime = (value: string) => {
   if (!value) {
@@ -32,12 +33,27 @@ export function ComplianceWorkspacePage() {
   const [lotQuery, setLotQuery] = useState('')
   const [lot, setLot] = useState<Awaited<ReturnType<typeof loadLot>> | null>(null)
   const [ddr, setDdr] = useState<EudrDueDiligence | null>(null)
+  const [parcels, setParcels] = useState<ParcelRecord[]>([])
   const [isBusy, setIsBusy] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
   const [docForm, setDocForm] = useState({ docType: '', url: '', issuedAt: '' })
   const [deforestationForm, setDeforestationForm] = useState({ parcelId: '', source: 'manual', checkDate: '', result: 'unknown' })
   const [legalityForm, setLegalityForm] = useState({ checkType: '', status: 'unknown' })
   const [declarationRef, setDeclarationRef] = useState('')
+
+  useEffect(() => {
+    if (!token) return
+    listParcels(token)
+      .then((response) => {
+        const items = Array.isArray(response)
+          ? response
+          : Array.isArray((response as { items?: unknown })?.items)
+            ? (response as { items: unknown[] }).items
+            : []
+        setParcels(items as ParcelRecord[])
+      })
+      .catch(() => showToast('Erreur lors du chargement des parcelles', 'error'))
+  }, [token, showToast])
 
   const refreshDdr = async (ddId: string) => {
     if (!token) {
@@ -326,7 +342,18 @@ export function ComplianceWorkspacePage() {
       <SimpleGrid columns={{ base: 1, md: 2 }} gap="6">
         <Stack className="cc-surface" borderRadius="var(--cc-radius-lg)" p="6" gap="3">
           <Heading size="md" color="var(--cc-cocoa-deep)" fontFamily="'Playfair Display', serif">Check déforestation</Heading>
-          <Input placeholder="Parcel ID" value={deforestationForm.parcelId} onChange={(event) => setDeforestationForm((current) => ({ ...current, parcelId: event.target.value }))} />
+          <select
+            className="cc-input"
+            value={deforestationForm.parcelId}
+            onChange={(event) => setDeforestationForm((current) => ({ ...current, parcelId: event.target.value }))}
+          >
+            <option value="">-- Choisir une parcelle --</option>
+            {parcels.map(parcel => (
+              <option key={parcel.id} value={parcel.id}>
+                {parcel.name || parcel.id} - {parcel.ownerName || 'Sans propriétaire'} - {parcel.areaSqm ? `${parcel.areaSqm}m²` : 'Superficie inconnue'}
+              </option>
+            ))}
+          </select>
           <Input placeholder="Source" value={deforestationForm.source} onChange={(event) => setDeforestationForm((current) => ({ ...current, source: event.target.value }))} />
           <Input type="date" value={deforestationForm.checkDate} onChange={(event) => setDeforestationForm((current) => ({ ...current, checkDate: event.target.value }))} />
           <select className="cc-input" value={deforestationForm.result} onChange={(event) => setDeforestationForm((current) => ({ ...current, result: event.target.value }))}>

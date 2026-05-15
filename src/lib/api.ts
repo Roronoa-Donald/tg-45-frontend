@@ -272,6 +272,17 @@ export async function updateDdr(token: string, ddId: string, payload: Record<str
   })
 }
 
+export async function listDueDiligence(token: string, filters?: { cooperativeId?: string; status?: string }) {
+  const search = new URLSearchParams()
+  if (filters?.cooperativeId) search.set('cooperativeId', filters.cooperativeId)
+  if (filters?.status) search.set('status', filters.status)
+  search.set('_t', Date.now().toString())
+
+  return request<{ items: Record<string, unknown>[] }>(`/eudr/ddr?${search.toString()}`, {
+    headers: authHeaders(token),
+  })
+}
+
 export async function getDdr(token: string, ddId: string) {
   return request<Record<string, unknown>>(`/eudr/ddr/${ddId}`, {
     headers: authHeaders(token),
