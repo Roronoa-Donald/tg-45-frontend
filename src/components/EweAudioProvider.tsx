@@ -37,7 +37,7 @@ export const EweAudioProvider: React.FC<EweAudioProviderProps> = ({
 
     const fetchAudios = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/audios/page/${page}/ee`)
+        const response = await fetch(`${API_BASE_URL}/audio-collector/pages/${page}/ee`)
         if (!response.ok) {
           console.debug(`Audio API returned ${response.status}`)
           return
