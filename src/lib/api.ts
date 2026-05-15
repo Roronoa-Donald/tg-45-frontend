@@ -565,3 +565,123 @@ export async function contestLot(
     body: JSON.stringify(payload),
   })
 }
+
+// ─── REPUTATION ───
+
+export async function getReputationScore(token: string, userId?: string) {
+  const search = new URLSearchParams()
+  if (userId) search.set('userId', userId)
+  search.set('_t', Date.now().toString())
+  return request<{ userId: string; score: number; level: string; updatedAt: string }>(`/reputation/score?${search.toString()}`, {
+    headers: authHeaders(token),
+  })
+}
+
+export async function getReputationHistory(token: string, userId?: string, limit = 50) {
+  const search = new URLSearchParams()
+  if (userId) search.set('userId', userId)
+  search.set('limit', limit.toString())
+  search.set('_t', Date.now().toString())
+  return request<{ items: Record<string, unknown>[] }>(`/reputation/history?${search.toString()}`, {
+    headers: authHeaders(token),
+  })
+}
+
+export async function getCriticalReputations(token: string) {
+  return request<{ items: Record<string, unknown>[] }>(`/reputation/critical?_t=${Date.now()}`, {
+    headers: authHeaders(token),
+  })
+}
+
+export async function getReputationStatistics(token: string) {
+  return request<Record<string, unknown>>(`/reputation/statistics?_t=${Date.now()}`, {
+    headers: authHeaders(token),
+  })
+}
+
+// ─── DISPUTES ───
+
+export async function createDispute(token: string, payload: { lotId: string; reportedAgainst: string; reason: string; evidence?: Record<string, unknown> }) {
+  return request<Record<string, unknown>>('/disputes', {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function listDisputes(token: string, filters: { status?: string; lotId?: string; reportedBy?: string; reportedAgainst?: string } = {}) {
+  const search = new URLSearchParams()
+  for (const [key, value] of Object.entries(filters)) {
+    if (value) search.set(key, value)
+  }
+  search.set('_t', Date.now().toString())
+  return request<{ items: Record<string, unknown>[] }>(`/disputes?${search.toString()}`, {
+    headers: authHeaders(token),
+  })
+}
+
+export async function getDispute(token: string, disputeId: string) {
+  return request<Record<string, unknown>>(`/disputes/${disputeId}?_t=${Date.now()}`, {
+    headers: authHeaders(token),
+  })
+}
+
+export async function updateDisputeStatus(token: string, disputeId: string, payload: { status: string; resolution?: string }) {
+  return request<Record<string, unknown>>(`/disputes/${disputeId}/status`, {
+    method: 'PUT',
+    headers: authHeaders(token),
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function addDisputeNote(token: string, disputeId: string, note: string) {
+  return request<Record<string, unknown>>(`/disputes/${disputeId}/notes`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify({ note }),
+  })
+}
+
+export async function getDisputeStats(token: string) {
+  return request<Record<string, unknown>>(`/disputes/stats/overview?_t=${Date.now()}`, {
+    headers: authHeaders(token),
+  })
+}
+
+// ─── FARMER QR CARD ───
+
+export async function generateFarmerQR(token: string) {
+  return request<{ token: string; qrCodeDataUrl: string; qrData: Record<string, unknown> }>('/farmer-card/generate', {
+    method: 'POST',
+    headers: authHeaders(token),
+  })
+}
+
+export async function regenerateFarmerQR(token: string, userId: string) {
+  return request<{ token: string; qrCodeDataUrl: string; qrData: Record<string, unknown> }>(`/farmer-card/regenerate/${userId}`, {
+    method: 'POST',
+    headers: authHeaders(token),
+  })
+}
+
+export async function revokeFarmerQR(token: string, userId: string) {
+  return request<{ success: boolean; message: string }>(`/farmer-card/revoke/${userId}`, {
+    method: 'DELETE',
+    headers: authHeaders(token),
+  })
+}
+
+export async function verifyFarmerQR(token: string, qrToken: string) {
+  return request<Record<string, unknown>>('/farmer-card/verify', {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify({ token: qrToken }),
+  })
+}
+
+export async function loginWithQR(qrToken: string) {
+  return request<{ token: string; user: Record<string, unknown> }>('/farmer-card/login-with-qr', {
+    method: 'POST',
+    body: JSON.stringify({ token: qrToken }),
+  })
+}
