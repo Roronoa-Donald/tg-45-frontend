@@ -5,6 +5,7 @@ import { LanguageToggle } from '../../components/LanguageToggle'
 import { MobileBottomNav } from '../../components/MobileBottomNav'
 import { DesktopTopBar } from '../../components/DesktopTopBar'
 import { SafeImage } from '../../components/SafeImage'
+import { EweAudioProvider } from '../../components/EweAudioProvider'
 import { useAppData } from '../../context/AppContext'
 
 export const FarmerLayout = () => {
@@ -36,6 +37,20 @@ export const FarmerLayout = () => {
     },
   ]
 
+  // Déterminer le type de page pour l'audio Ewe
+  const getAudioKey = () => {
+    if (location.pathname === '/farmer/new' || location.pathname.startsWith('/farmer/new/')) {
+      return 'farmer_capture'
+    }
+    if (location.pathname === '/farmer/lots') {
+      return 'farmer_lots'
+    }
+    if (location.pathname === '/farmer/profile' || location.pathname.startsWith('/farmer/profile/')) {
+      return 'farmer_profile'
+    }
+    return 'farmer_home'
+  }
+
   const activeTitle =
     location.pathname === '/farmer/new'
       ? t('farmer.newBatch')
@@ -46,12 +61,13 @@ export const FarmerLayout = () => {
           : t('farmer.home')
 
   return (
-    <div className="min-h-screen bg-cream-light text-base text-cocoa-700">
-      <div className="fixed right-3 top-3 z-50 lg:hidden">
-        <LanguageToggle />
-      </div>
+    <EweAudioProvider audioKey={getAudioKey()} autoPlay>
+      <div className="min-h-screen bg-cream-light text-base text-cocoa-700">
+        <div className="fixed right-3 top-3 z-50 lg:hidden">
+          <LanguageToggle />
+        </div>
 
-      <div className="mx-auto flex min-h-screen w-full max-w-[1440px] lg:pl-0">
+        <div className="mx-auto flex min-h-screen w-full max-w-[1440px] lg:pl-0">
         <aside className="hidden w-[220px] flex-none border-r border-[rgba(0,0,0,0.1)] bg-white px-4 py-6 lg:block">
           <div className="mb-6 rounded-xl border border-[rgba(0,0,0,0.1)] bg-cream-light p-3">
             <SafeImage
@@ -100,7 +116,8 @@ export const FarmerLayout = () => {
         </div>
       </div>
 
-      <MobileBottomNav items={sidebarItems} />
-    </div>
+        <MobileBottomNav items={sidebarItems} />
+      </div>
+    </EweAudioProvider>
   )
 }
