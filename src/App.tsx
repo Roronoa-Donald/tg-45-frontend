@@ -11,7 +11,8 @@ import { ParcelsPage } from './pages/ParcelsPage'
 import { FarmerDashboardPage } from './pages/farmer/FarmerDashboardPage'
 import { FarmerCapturePage } from './pages/farmer/FarmerCapturePage'
 import { FarmerLotsViewPage } from './pages/farmer/FarmerLotsViewPage'
-import { FarmerProfileViewPage } from './pages/farmer/FarmerProfileViewPage'
+import { FarmerProfilePageV2 } from './pages/farmer/FarmerProfilePageV2'
+import { MinistryDisputesPage } from './pages/ministry/MinistryDisputesPage'
 import { DraftsPage } from './pages/farmer/DraftsPage'
 import { CooperativeWorkspacePage } from './pages/cooperative/CooperativeWorkspacePage'
 import { CooperativeExportsPage } from './pages/cooperative/CooperativeExportsPage'
@@ -51,7 +52,7 @@ function App() {
           <Route index element={<FarmerDashboardPage />} />
           <Route path="new" element={<FarmerCapturePage />} />
           <Route path="lots" element={<FarmerLotsViewPage />} />
-          <Route path="profile" element={<FarmerProfileViewPage />} />
+          <Route path="profile" element={<FarmerProfilePageV2 />} />
           <Route path="drafts" element={<DraftsPage />} />
         </Route>
 
@@ -120,6 +121,7 @@ function App() {
           }
         >
           <Route index element={<MinistryWorkspacePage />} />
+          <Route path="disputes" element={<MinistryDisputesPage />} />
         </Route>
       </Route>
 
