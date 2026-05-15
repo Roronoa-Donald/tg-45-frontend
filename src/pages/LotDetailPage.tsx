@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { useLots } from '../hooks/useLots'
 import { useAuth } from '../hooks/useAuth'
+import { useToast } from '../context/ToastContext'
 import { listParcels, linkLotParcel, unlinkLotParcel } from '../lib/api'
 import { EmptyState } from '../components/EmptyState'
 import { StatusPill } from '../components/StatusPill'
@@ -13,12 +14,14 @@ export function LotDetailPage() {
   const { lotId } = useParams()
   const navigate = useNavigate()
   const { token } = useAuth()
+  const { showToast } = useToast()
   const { lots, draftLots, loadLot } = useLots()
   const [lot, setLot] = useState<LotRecord | null>(null)
   const [loading, setLoading] = useState(true)
   const [parcels, setParcels] = useState<ParcelRecord[]>([])
   const [selectedParcelId, setSelectedParcelId] = useState('')
   const [isLinking, setIsLinking] = useState(false)
+  const [isUnlinking, setIsUnlinking] = useState<string | null>(null)
 
   useEffect(() => {
     if (!lotId) { setLoading(false); return }
@@ -44,12 +47,22 @@ export function LotDetailPage() {
     }
 
     const loadParcels = async () => {
-      const response = await listParcels(token)
-      setParcels(response as unknown as ParcelRecord[])
+      try {
+        const response = await listParcels(token)
+        const items = Array.isArray(response)
+          ? response
+          : Array.isArray((response as { items?: unknown })?.items)
+            ? (response as { items: unknown[] }).items
+            : []
+        setParcels(items as ParcelRecord[])
+      } catch {
+        showToast('Impossible de charger les parcelles', 'error')
+        setParcels([])
+      }
     }
 
     void loadParcels()
-  }, [token])
+  }, [token, showToast])
 
   const handleLinkParcel = async () => {
     if (!token || !lot || !selectedParcelId) {
@@ -61,6 +74,9 @@ export function LotDetailPage() {
       const refreshed = await loadLot(lot.id)
       setLot(refreshed ?? null)
       setSelectedParcelId('')
+      showToast('Parcelle liee avec succes', 'success')
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Erreur lors de la liaison', 'error')
     } finally {
       setIsLinking(false)
     }
@@ -70,9 +86,17 @@ export function LotDetailPage() {
     if (!token || !lot) {
       return
     }
-    await unlinkLotParcel(token, lot.id, parcelId)
-    const refreshed = await loadLot(lot.id)
-    setLot(refreshed ?? null)
+    setIsUnlinking(parcelId)
+    try {
+      await unlinkLotParcel(token, lot.id, parcelId)
+      const refreshed = await loadLot(lot.id)
+      setLot(refreshed ?? null)
+      showToast('Parcelle deliee avec succes', 'success')
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Erreur lors de la suppression du lien', 'error')
+    } finally {
+      setIsUnlinking(null)
+    }
   }
 
   if (loading) {
@@ -173,7 +197,13 @@ export function LotDetailPage() {
                             <Text fontSize="xs" color="var(--cc-cocoa)" opacity="0.7">Type: {link.parcel?.geometryType || '—'} · Surface: {link.parcel?.areaHa ?? '—'} ha</Text>
                           </Stack>
                           {link.parcel?.id ? (
-                            <Button size="sm" variant="outline" onClick={() => handleUnlinkParcel(link.parcel?.id || link.parcelId || '')}>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleUnlinkParcel(link.parcel?.id || link.parcelId || '')}
+                              loading={isUnlinking === (link.parcel?.id || link.parcelId)}
+                              disabled={isUnlinking !== null}
+                            >
                               Délier
                             </Button>
                           ) : null}
@@ -203,7 +233,7 @@ export function LotDetailPage() {
                       colorPalette="yellow"
                       onClick={handleLinkParcel}
                       loading={isLinking}
-                      disabled={!selectedParcelId}
+                      disabled={!selectedParcelId || isLinking}
                     >
                       Lier
                     </Button>

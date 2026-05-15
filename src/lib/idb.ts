@@ -1,6 +1,6 @@
 const DB_NAME = 'chaincacao-offline'
-const DB_VERSION = 1
-const STORE_NAMES = ['drafts', 'mutations'] as const
+const DB_VERSION = 2
+const STORE_NAMES = ['drafts', 'mutations', 'photos'] as const
 
 type StoreName = (typeof STORE_NAMES)[number]
 
@@ -138,7 +138,26 @@ export async function clearRecords(storeName: StoreName) {
   })
 }
 
+export async function readRecord<T>(storeName: StoreName, id: string): Promise<T | null> {
+  const database = await openDatabase()
+
+  if (!database) {
+    const records = await fallbackReadAll<T & { id: string }>(storeName)
+    return records.find((record) => record.id === id) || null
+  }
+
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction(storeName, 'readonly')
+    const store = transaction.objectStore(storeName)
+    const request = store.get(id)
+
+    request.onsuccess = () => resolve(request.result as T | null)
+    request.onerror = () => reject(request.error)
+  })
+}
+
 export const offlineStores = {
   drafts: 'drafts' as const,
   mutations: 'mutations' as const,
+  photos: 'photos' as const,
 }

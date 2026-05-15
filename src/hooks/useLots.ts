@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { LotDraft, LotRecord, PublicLotRecord } from '../domain/types'
 import { seedPublicLots } from '../data/seed'
 import { getLot, listLots, publicVerify } from '../lib/api'
-import { deleteRecord, offlineStores, readAllRecords, writeRecord } from '../lib/idb'
+import { deleteRecord, offlineStores, readAllRecords, readRecord, writeRecord } from '../lib/idb'
 import { useAuth } from './useAuth'
 import { useSync } from './useSync'
 
@@ -151,7 +151,10 @@ export function useLots() {
       try {
         const lightweightDrafts = draftLots.map(draft => {
           const { photoDataUrl, ...rest } = draft
-          void photoDataUrl
+          // Save photo to IndexedDB separately
+          if (photoDataUrl) {
+            writeRecord(offlineStores.photos, { id: draft.id, dataUrl: photoDataUrl }).catch(console.warn)
+          }
           return rest
         })
         window.localStorage.setItem(DRAFT_LOTS_KEY, JSON.stringify(lightweightDrafts))
@@ -184,10 +187,13 @@ export function useLots() {
         ? rawItems.map((item) => normalizeLot(item as Record<string, unknown>))
         : []
 
-      let mergedItems = items
-      setLots((current) => {
-        mergedItems = mergePendingLots(items, current)
-        return mergedItems
+      // Use a promise to get the merged result without mutating external variable
+      const mergedItems = await new Promise<LotRecord[]>((resolve) => {
+        setLots((current) => {
+          const merged = mergePendingLots(items, current)
+          resolve(merged)
+          return merged
+        })
       })
 
       return mergedItems
@@ -212,7 +218,14 @@ export function useLots() {
     const loadOfflineDrafts = async () => {
       const storedDrafts = await readAllRecords<LotDraft>(offlineStores.drafts)
       if (storedDrafts.length > 0) {
-        setDraftLots(storedDrafts)
+        // Retrieve photos from IndexedDB and reassociate them with drafts
+        const draftsWithPhotos = await Promise.all(
+          storedDrafts.map(async (draft) => {
+            const photo = await readRecord<{ id: string; dataUrl: string }>(offlineStores.photos, draft.id)
+            return { ...draft, photoDataUrl: photo?.dataUrl }
+          })
+        )
+        setDraftLots(draftsWithPhotos)
       }
     }
 

@@ -49,8 +49,20 @@ export function ParcelsPage() {
     }
 
     const load = async () => {
-      const response = await listParcels(token)
-      setParcels(response as unknown as ParcelRecord[])
+      try {
+        const response = await listParcels(token)
+        const items = Array.isArray(response)
+          ? response
+          : Array.isArray((response as { items?: unknown })?.items)
+            ? (response as { items: unknown[] }).items
+            : Array.isArray((response as { data?: { items?: unknown } })?.data?.items)
+              ? ((response as { data: { items: unknown[] } }).data.items)
+              : []
+        setParcels(items as ParcelRecord[])
+      } catch (err) {
+        console.error('Failed to load parcels:', err)
+        setParcels([])
+      }
     }
 
     void load()
@@ -226,7 +238,12 @@ export function ParcelsPage() {
       }
 
       const refreshed = await listParcels(token)
-      setParcels(refreshed as unknown as ParcelRecord[])
+      const items = Array.isArray(refreshed)
+        ? refreshed
+        : Array.isArray((refreshed as { items?: unknown })?.items)
+          ? (refreshed as { items: unknown[] }).items
+          : []
+      setParcels(items as ParcelRecord[])
       setSelectedId(null)
       setGeoJsonText('')
       setForm((current) => ({
@@ -319,7 +336,7 @@ export function ParcelsPage() {
             </Stack>
           )}
 
-          <Button className="cc-btn-gold" onClick={handleSave} loading={saving}>
+          <Button className="cc-btn-gold" onClick={handleSave} loading={saving} disabled={saving}>
             {selectedId ? 'Mettre à jour' : 'Créer la parcelle'}
           </Button>
         </Stack>

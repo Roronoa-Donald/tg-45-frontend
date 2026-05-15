@@ -74,6 +74,21 @@ export function VerifierWorkspacePage() {
   const [reasonByLot, setReasonByLot] = useState<Record<string, string>>({})
   const [contestReasonByLot, setContestReasonByLot] = useState<Record<string, string>>({})
 
+  // Helper to normalize API response to array
+  const normalizeApiResponse = <T,>(response: unknown): T[] => {
+    if (Array.isArray(response)) return response as T[]
+    if (response && typeof response === 'object') {
+      const res = response as Record<string, unknown>
+      if (Array.isArray(res.items)) return res.items as T[]
+      if (res.data && typeof res.data === 'object') {
+        const data = res.data as Record<string, unknown>
+        if (Array.isArray(data.items)) return data.items as T[]
+        if (Array.isArray(data)) return data as T[]
+      }
+    }
+    return []
+  }
+
   const refreshAll = useCallback(async () => {
     if (!token) return
     setLoading(true)
@@ -85,11 +100,11 @@ export function VerifierWorkspacePage() {
         getSpotCheckLots(token),
       ])
 
-      setPendingParcels(Array.isArray(parcelsRes?.items) ? parcelsRes.items as unknown as ParcelValidation[] : [])
-      setPendingVoteLots(Array.isArray(pendingRes?.items) ? pendingRes.items as unknown as VerificationLot[] : [])
-      setAutoValidatedLots(Array.isArray(autoRes?.items) ? autoRes.items as unknown as VerificationLot[] : [])
-      setSpotCheckLots(Array.isArray(spotRes?.items) ? spotRes.items as unknown as VerificationLot[] : [])
-    } catch (err) {
+      setPendingParcels(normalizeApiResponse<ParcelValidation>(parcelsRes))
+      setPendingVoteLots(normalizeApiResponse<VerificationLot>(pendingRes))
+      setAutoValidatedLots(normalizeApiResponse<VerificationLot>(autoRes))
+      setSpotCheckLots(normalizeApiResponse<VerificationLot>(spotRes))
+    } catch {
       showToast('Erreur lors du chargement des données.', 'error')
     } finally {
       setLoading(false)

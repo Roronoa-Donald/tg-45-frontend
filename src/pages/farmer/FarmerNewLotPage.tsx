@@ -1,29 +1,33 @@
 import { Camera, CheckCircle, MapPin, Check, X, Upload } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAppData } from '../../context/AppContext'
-// import { useAuth } from '../../hooks/useAuth'
-import type { Lot } from '../../types'
+import { useAuth } from '../../hooks/useAuth'
+import { useLots } from '../../hooks/useLots'
+import { useToast } from '../../context/ToastContext'
 import { Box, Flex, Heading, Text, Icon, Spinner, Input } from '@chakra-ui/react'
 import imageCompression from 'browser-image-compression'
 
 export const FarmerNewLotPage = () => {
   const navigate = useNavigate()
-  const { farmers, addLot } = useAppData()
-  // const { user } = useAuth()
-  
-  // Dans le vrai projet, on trouverait le farmer par son userId. Ici on prend le premier pour la démo.
-  const farmer = farmers[0]
+  const { user } = useAuth()
+  const { saveDraft, submitDraft } = useLots()
+  const { showToast } = useToast()
 
   const [currentStep, setCurrentStep] = useState(1)
   const [isCapturing, setIsCapturing] = useState(false)
   const [createdLotId, setCreatedLotId] = useState('')
-  
+
   // Data collected during the flow
-  const [cocoaPhoto, setCocoaPhoto] = useState<File | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_cocoaPhoto, setCocoaPhoto] = useState<File | null>(null)
+  const [cocoaPhotoDataUrl, setCocoaPhotoDataUrl] = useState<string | null>(null)
   const [hasScale, setHasScale] = useState<boolean | null>(null)
-  const [scalePhoto, setScalePhoto] = useState<File | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_scalePhoto, setScalePhoto] = useState<File | null>(null)
   const [gpsReady, setGpsReady] = useState(false)
+  const [gpsCoords, setGpsCoords] = useState<{ lat: number; lng: number } | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_gpsError, setGpsError] = useState<string | null>(null)
 
   const handleVibrate = (pattern = [50]) => {
     if (navigator.vibrate) navigator.vibrate(pattern)
@@ -47,15 +51,21 @@ export const FarmerNewLotPage = () => {
     if (e.target.files && e.target.files[0]) {
       handleVibrate()
       setIsCapturing(true)
-      
+
       const file = e.target.files[0]
       const compressedFile = await compressImage(file)
-      
+
       handleVibrate([50, 100, 50]) // Success vibration
       setIsCapturing(false)
-      
+
       if (type === 'cocoa') {
         setCocoaPhoto(compressedFile)
+        // Convert to data URL for API submission
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          setCocoaPhotoDataUrl(reader.result as string)
+        }
+        reader.readAsDataURL(compressedFile)
         setCurrentStep(2)
       } else {
         setScalePhoto(compressedFile)
@@ -78,60 +88,91 @@ export const FarmerNewLotPage = () => {
     setCurrentStep(3)
   }
 
-  // Auto GPS when reaching step 3
+  // Real GPS acquisition when reaching step 3
   useEffect(() => {
     if (currentStep === 3) {
       handleVibrate([100])
-      setTimeout(() => {
-        handleVibrate([50, 100, 50, 100, 50]) // Long success vibration
-        setGpsReady(true)
-      }, 3000)
-    }
-  }, [currentStep])
+      setGpsError(null)
 
-  const submitLot = () => {
+      if (!navigator.geolocation) {
+        setGpsError('Géolocalisation non supportée par cet appareil')
+        showToast('Géolocalisation non supportée par cet appareil', 'error')
+        return
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setGpsCoords({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          })
+          setGpsReady(true)
+          handleVibrate([50, 100, 50, 100, 50]) // Long success vibration
+          showToast('Position GPS acquise', 'success')
+        },
+        (error) => {
+          let errorMessage = 'Impossible d\'obtenir la position GPS'
+          if (error.code === error.PERMISSION_DENIED) {
+            errorMessage = 'Accès GPS refusé. Veuillez autoriser la géolocalisation.'
+          } else if (error.code === error.POSITION_UNAVAILABLE) {
+            errorMessage = 'Position GPS indisponible'
+          } else if (error.code === error.TIMEOUT) {
+            errorMessage = 'Délai d\'attente GPS dépassé'
+          }
+          setGpsError(errorMessage)
+          showToast(errorMessage, 'error')
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+      )
+    }
+  }, [currentStep, showToast])
+
+  const submitLot = async () => {
+    if (!gpsCoords) {
+      showToast('Position GPS requise', 'error')
+      return
+    }
+
+    if (!user) {
+      showToast('Vous devez être connecté pour créer un lot', 'error')
+      return
+    }
+
     handleVibrate()
     setIsCapturing(true)
 
-    setTimeout(() => {
-      const lotId = `LOT-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`
+    try {
+      const draftId = `draft-${Date.now()}`
+      const idempotencyKey = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`
+      const lotTitle = `LOT-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`
 
-      const newLot: Lot = {
-        id: lotId,
-        qrData: `https://chaincacao.tg/verify/${lotId}`,
-        farmerId: farmer.id,
-        farmerName: farmer.name,
+      const draft = {
+        id: draftId,
+        title: lotTitle,
         product: 'Cacao',
-        variety: 'Forastero', // Default
+        variety: 'Forastero',
         weightKg: 0, // Pending cooperative transcription
-        gpsOrigin: farmer.gps,
-        dateHarvest: new Date().toISOString().slice(0, 10),
-        status: 'registered',
-        blockchainHash: `0x${Math.random().toString(16).slice(2, 34)}`,
-        blockchainConfirmed: false, // Will be confirmed later by coop
-        certifications: ['Fairtrade'],
-        eudrCompliant: true,
-        imageUrl: cocoaPhoto ? URL.createObjectURL(cocoaPhoto) : 'https://images.unsplash.com/photo-1587049352847-4d4b1ed74dd4?auto=format&fit=crop&q=80&w=800',
-        scaleImageUrl: scalePhoto ? URL.createObjectURL(scalePhoto) : undefined,
-        journey: [
-          {
-            step: 1,
-            actor: farmer.name,
-            role: 'Agriculteur',
-            action: 'Récolte enregistrée (En attente de pesée Coop)',
-            location: farmer.region,
-            date: new Date().toISOString(),
-            gps: farmer.gps,
-            status: 'validated',
-          },
-        ],
+        harvestDate: new Date().toISOString().split('T')[0],
+        gpsOriginLat: gpsCoords.lat,
+        gpsOriginLng: gpsCoords.lng,
+        gpsPrecisionM: 0,
+        photoDataUrl: cocoaPhotoDataUrl || undefined,
+        idempotencyKey,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       }
 
-      addLot(newLot)
-      setCreatedLotId(lotId)
-      setIsCapturing(false)
+      await saveDraft(draft)
+      await submitDraft(draft)
+
+      setCreatedLotId(lotTitle)
       handleVibrate([100, 50, 100, 50, 200]) // Victory vibration
-    }, 2000)
+      showToast('Lot enregistré avec succès !', 'success')
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Erreur lors de la création du lot', 'error')
+    } finally {
+      setIsCapturing(false)
+    }
   }
 
   if (createdLotId) {

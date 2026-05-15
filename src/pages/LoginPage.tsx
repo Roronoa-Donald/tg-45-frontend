@@ -12,6 +12,8 @@ const ROLE_ROUTES: Record<string, string> = {
   exporter: '/exporter',
   admin: '/admin',
   ministry: '/ministry',
+  compliance: '/compliance',
+  support: '/admin',
 }
 
 export function LoginPage() {

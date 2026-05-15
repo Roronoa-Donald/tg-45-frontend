@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useState, useRef } from 'react'
 import {
   createLot,
   certifyLot,
@@ -124,6 +124,13 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'error'>('idle')
   const [queue, setQueue] = useState<OfflineMutation[]>([])
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null)
+  // Use ref to track current queue for callbacks without stale closures
+  const queueRef = useRef<OfflineMutation[]>(queue)
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    queueRef.current = queue
+  }, [queue])
 
   useEffect(() => {
     let mounted = true
@@ -152,17 +159,6 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  const persistQueue = useCallback(async (nextQueue: OfflineMutation[]) => {
-    setQueue(nextQueue)
-
-    for (const item of nextQueue) {
-      await writeRecord(offlineStores.mutations, item)
-    }
-
-    const staleIds = new Set(nextQueue.map((item) => item.id))
-    const stored = await readAllRecords<OfflineMutation>(offlineStores.mutations)
-    await Promise.all(stored.filter((item) => !staleIds.has(item.id)).map((item) => deleteRecord(offlineStores.mutations, item.id)))
-  }, [])
 
   const removeMutation = useCallback(async (id: string) => {
     await deleteRecord(offlineStores.mutations, id)
@@ -214,8 +210,15 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
         updatedAt: now,
       }
 
-      const nextQueue = [...queue, mutation]
-      await persistQueue(nextQueue)
+      // Use functional update to avoid stale closure on queue
+      let nextQueue: OfflineMutation[] = []
+      setQueue((current) => {
+        nextQueue = [...current, mutation]
+        return nextQueue
+      })
+
+      // Persist the queue with the new mutation
+      await writeRecord(offlineStores.mutations, mutation)
 
       if (isOnline && token) {
         try {
@@ -229,19 +232,22 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
           setSyncStatus('idle')
         } catch (error) {
           console.error('[SyncContext] Mutation failed, will retry via batch:', mutation.id, error)
-          mutation.status = 'failed'
-          mutation.lastError = error instanceof Error ? error.message : 'Mutation hors ligne'
-          mutation.attempts += 1
-          mutation.updatedAt = new Date().toISOString()
-          await writeRecord(offlineStores.mutations, mutation)
-          setQueue((current) => current.map((item) => (item.id === mutation.id ? mutation : item)))
+          const failedMutation = {
+            ...mutation,
+            status: 'failed' as const,
+            lastError: error instanceof Error ? error.message : 'Mutation hors ligne',
+            attempts: mutation.attempts + 1,
+            updatedAt: new Date().toISOString(),
+          }
+          await writeRecord(offlineStores.mutations, failedMutation)
+          setQueue((current) => current.map((item) => (item.id === failedMutation.id ? failedMutation : item)))
           setSyncStatus('error')
         }
       }
 
       return mutation
     },
-    [isOnline, persistQueue, queue, removeMutation, token],
+    [isOnline, removeMutation, token],
   )
 
   const retryFailed = useCallback(async () => {

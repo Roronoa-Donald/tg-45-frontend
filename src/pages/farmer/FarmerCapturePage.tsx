@@ -1,5 +1,5 @@
 import { Box, Flex, Heading, SimpleGrid, Stack, Text } from '@chakra-ui/react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CameraCapture } from '../../components/CameraCapture'
 import { useAuth } from '../../hooks/useAuth'
@@ -189,6 +189,9 @@ export function FarmerCapturePage() {
   const [parcelsLoading, setParcelsLoading] = useState(false)
   const [selectedParcelId, setSelectedParcelId] = useState('')
 
+  // Track if GPS has been requested to prevent infinite loop
+  const gpsRequestedRef = useRef(false)
+
   const stopWatching = useCallback(() => {
     if (watchId !== null) {
       navigator.geolocation.clearWatch(watchId)
@@ -240,9 +243,12 @@ export function FarmerCapturePage() {
     setWatchId(id)
   }, [showToast])
 
-  // Request GPS on mount
+  // Request GPS on mount - use ref to prevent infinite loop
   useEffect(() => {
-    requestGps()
+    if (!gpsRequestedRef.current) {
+      gpsRequestedRef.current = true
+      requestGps()
+    }
   }, [requestGps])
 
   useEffect(() => {
@@ -255,8 +261,15 @@ export function FarmerCapturePage() {
       setParcelsLoading(true)
       try {
         const response = await listParcels(token)
-        setParcels(response as unknown as ParcelRecord[])
-      } catch (err) {
+        const items = Array.isArray(response)
+          ? response
+          : Array.isArray((response as { items?: unknown })?.items)
+            ? (response as { items: unknown[] }).items
+            : Array.isArray((response as { data?: { items?: unknown } })?.data?.items)
+              ? ((response as { data: { items: unknown[] } }).data.items)
+              : []
+        setParcels(items as ParcelRecord[])
+      } catch {
         showToast('Impossible de charger les parcelles.', 'warning')
         setParcels([])
       } finally {
