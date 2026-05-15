@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { getEweAudioPath, isValidEweAudioKey, EweAudioKey } from '../config/eweAudioMap'
+import { getEweAudioPath, isValidEweAudioKey } from '../config/eweAudioMap'
+import type { EweAudioKey } from '../config/eweAudioMap'
 
 interface AudioConfig {
   key: EweAudioKey | string
