@@ -1,69 +1,89 @@
-import React, { useRef, useEffect } from 'react'
+import React, { useRef, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { getEweAudioPath, isValidEweAudioKey } from '../config/eweAudioMap'
 import type { EweAudioKey } from '../config/eweAudioMap'
 
 interface EweAudioProviderProps {
   children: ReactNode
-  audioKey?: EweAudioKey | string
+  page?: EweAudioKey | string
   autoPlay?: boolean
   onError?: (error: Error) => void
 }
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000'
+
 /**
  * Composant wrapper pour lire automatiquement l'audio Ewe sur les pages farmer.
- * Gère le cycle de vie de l'audio et l'auto-play en fonction de la langue.
+ * Charge les URLs audio depuis Cloudinary via l'API backend.
  *
  * Utilisation:
- * <EweAudioProvider audioKey="farmer_home" autoPlay>
+ * <EweAudioProvider page="farmer_home" autoPlay>
  *   <YourContent />
  * </EweAudioProvider>
  */
 export const EweAudioProvider: React.FC<EweAudioProviderProps> = ({
   children,
-  audioKey,
+  page,
   autoPlay = true,
   onError,
 }) => {
   const { i18n } = useTranslation()
   const audioRef = useRef<HTMLAudioElement>(null)
+  const [audioUrls, setAudioUrls] = useState<Record<string, string>>({})
 
+  // Fetch audio URLs from API
   useEffect(() => {
-    // Seulement si la langue est Ewe
-    if (i18n.language !== 'ee') {
-      return
+    if (i18n.language !== 'ee' || !page) return
+
+    const fetchAudios = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/audios/page/${page}/ee`)
+        if (!response.ok) {
+          console.debug(`Audio API returned ${response.status}`)
+          return
+        }
+        const data = await response.json()
+        if (data.data?.audios) {
+          setAudioUrls(data.data.audios)
+        }
+      } catch (err) {
+        console.debug(`Failed to fetch audios for ${page}:`, err)
+      }
     }
 
-    // Valider la clé d'audio
-    if (!audioKey || !isValidEweAudioKey(audioKey)) {
-      if (audioKey) {
-        console.debug(`Invalid audio key: ${audioKey}. Check eweAudioMap.ts`)
-      }
+    fetchAudios()
+  }, [i18n.language, page])
+
+  // Play the first available audio for this page
+  useEffect(() => {
+    if (i18n.language !== 'ee' || !page || Object.keys(audioUrls).length === 0) {
       return
     }
 
     const audioElement = audioRef.current
     if (!audioElement) return
 
-    // Construire le chemin du fichier audio
-    const audioPath = getEweAudioPath(audioKey as EweAudioKey)
-    audioElement.src = audioPath
+    // Get the first audio URL
+    const firstAudioUrl = Object.values(audioUrls)[0]
+    if (!firstAudioUrl) {
+      console.debug(`No audio URLs found for page ${page}`)
+      return
+    }
+
+    audioElement.src = firstAudioUrl
 
     if (autoPlay) {
-      // Délai court pour laisser le DOM se stabiliser
       const timer = setTimeout(() => {
         audioElement.play().catch((err) => {
-          console.debug(`Audio autoplay blocked or error for ${audioKey}:`, err.message)
-          if (onError) onError(err)
+          console.debug(`Audio autoplay blocked or error for ${page}:`, err.message)
+          if (onError) onError(err as Error)
         })
       }, 250)
 
       return () => clearTimeout(timer)
     }
-  }, [i18n.language, audioKey, autoPlay, onError])
+  }, [i18n.language, page, audioUrls, autoPlay, onError])
 
-  // Ne rien rendre au niveau du DOM - l'audio est masqué
   return (
     <>
       <audio

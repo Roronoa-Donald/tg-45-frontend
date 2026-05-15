@@ -37,8 +37,8 @@ export const FarmerLayout = () => {
     },
   ]
 
-  // Déterminer le type de page pour l'audio Ewe
-  const getAudioKey = () => {
+  // Déterminer la page pour l'audio Ewe
+  const getAudioPage = () => {
     if (location.pathname === '/farmer/new' || location.pathname.startsWith('/farmer/new/')) {
       return 'farmer_capture'
     }
@@ -61,7 +61,7 @@ export const FarmerLayout = () => {
           : t('farmer.home')
 
   return (
-    <EweAudioProvider audioKey={getAudioKey()} autoPlay>
+    <EweAudioProvider page={getAudioPage()} autoPlay>
       <div className="min-h-screen bg-cream-light text-base text-cocoa-700">
         <div className="fixed right-3 top-3 z-50 lg:hidden">
           <LanguageToggle />
