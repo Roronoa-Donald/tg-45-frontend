@@ -135,6 +135,17 @@ export function ComplianceWorkspacePage() {
       await approveDdr(token, ddr.id, { approved })
       await refreshDdr(ddr.id)
       showToast(approved ? 'DDR approuve' : 'DDR rejete', 'success')
+
+      // Auto-generate declaration after approval
+      if (approved) {
+        try {
+          await generateDeclaration(token, ddr.id)
+          await refreshDdr(ddr.id)
+          showToast('Déclaration générée automatiquement', 'success')
+        } catch (error) {
+          showToast('Erreur lors de la génération auto de la déclaration', 'warning')
+        }
+      }
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Erreur lors de l\'approbation', 'error')
     } finally {
@@ -223,10 +234,15 @@ export function ComplianceWorkspacePage() {
     }
     setIsBusy(true)
     try {
+      // Ensure declaration exists before submitting
+      if (!ddr.declarations || ddr.declarations.length === 0) {
+        await generateDeclaration(token, ddr.id)
+      }
+
       await submitDeclaration(token, ddr.id, declarationRef.trim())
       await refreshDdr(ddr.id)
       setDeclarationRef('')
-      showToast('Declaration soumise', 'success')
+      showToast('Declaration soumise avec succes', 'success')
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Erreur lors de la soumission', 'error')
     } finally {
@@ -350,7 +366,7 @@ export function ComplianceWorkspacePage() {
             <option value="">-- Choisir une parcelle --</option>
             {parcels.map(parcel => (
               <option key={parcel.id} value={parcel.id}>
-                {parcel.name || parcel.id} - {parcel.ownerName || 'Sans propriétaire'} - {parcel.areaSqm ? `${parcel.areaSqm}m²` : 'Superficie inconnue'}
+                {parcel.name || parcel.id} - {parcel.region || 'Région inconnue'} - {parcel.areaHa ? `${parcel.areaHa}ha` : 'Superficie inconnue'}
               </option>
             ))}
           </select>
